@@ -24,7 +24,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { listings } from "@/lib/data";
+// import { listings } from "@/lib/data";
 import { Listing } from "@/types";
 import axios from "axios";
 const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL
@@ -123,7 +123,7 @@ export default function ListingPage() {
                   Hotels in Ontario
                 </h1>
                 <p className="[font-family:'Inter',Helvetica] font-medium text-gray-600 text-sm md:text-base">
-                  {listings.length} properties found
+                  {/* {listings.length} properties found */}
                 </p>
               </div>
 
