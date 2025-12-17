@@ -61,7 +61,9 @@ export default function SignInPage() {
       // Check if email exists in database
       const { data: response } = await axios.post(`${baseUrl}/auth/checkEmail`, {
         email: email,
-      });
+      },
+      { withCredentials: true }
+    );
 
 
       //verifyCode

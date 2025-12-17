@@ -484,7 +484,8 @@ export default function SignupPage() {
 
 
       // Login successful, ab user data fetch karo /me se
-      const userResponse = await axios.get(`${baseUrl}/auth/me`, { withCredentials: true });
+      const userResponse = await axios.get(`${baseUrl}/auth/me`, { withCredentials: true }
+      );
 
    
 if (userResponse) {

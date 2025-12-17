@@ -223,7 +223,7 @@ export default function HotelDetailPage({ id }: { id: string }) {
 
     const fetchProperty = async () => {
       try {
-        const res = await axios.get(`${baseUrl}/ownerProperty/getProperties/${id}`);
+        const res = await axios.get(`${baseUrl}/ownerProperty/getProperties/${id}`, { withCredentials: true });
         if (!res || !res.data || !res.data.property) {
           router.push("/not-found");
           return;

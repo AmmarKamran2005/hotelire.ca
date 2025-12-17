@@ -78,7 +78,7 @@ export default function ListingPage() {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const res = await axios.get(`${baseUrl}/ownerProperty/getProperties`);
+        const res = await axios.get(`${baseUrl}/ownerProperty/getProperties`, {withCredentials: true} );
         const cardsData = res.data.properties.map((p: any) =>
 
           mapPropertyToCard(p)
