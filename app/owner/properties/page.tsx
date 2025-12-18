@@ -146,14 +146,26 @@ export default function PropertiesPage() {
 
 
 
-  const filteredProperties = useMemo(() => {
-    return propertyList.filter(p => {
-      const matchesSearch = p.propertytitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.propertysubtitle.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === "All" || p.availablestatus == true;
-      return matchesSearch && matchesStatus;
-    });
-  }, [propertyList, searchQuery, statusFilter]);
+const filteredProperties = useMemo(() => {
+  const query = searchQuery?.toLowerCase().trim() || "";
+
+  return propertyList.filter(p => {
+    const title = p.propertytitle ?? "";
+    const subtitle = p.propertysubtitle ?? "";
+
+    const matchesSearch =
+      title.toLowerCase().includes(query) ||
+      subtitle.toLowerCase().includes(query);
+
+    const matchesStatus =
+      statusFilter === "All" ? true : p.availablestatus === true;
+
+    return matchesSearch && matchesStatus;
+  });
+}, [propertyList, searchQuery, statusFilter]);
+
+
+  
   const handleDelete = () => {
     if (deleteId) {
       setPropertyList(prev => prev.filter(p => p.propertyid !== deleteId));
@@ -229,7 +241,8 @@ export default function PropertiesPage() {
             {filteredProperties ?
               filteredProperties.map((property) => (
                 <PropertyCard key={property.propertyid} property={property} onDelete={() => setDeleteId(property.propertyid)} />
-              )) : <div className="col-span-full text-center py-12">
+              )) : 
+              <div className="col-span-full text-center py-12">
                 <p className="text-gray-500 dark:text-gray-400">No properties found.</p>
               </div>
 
