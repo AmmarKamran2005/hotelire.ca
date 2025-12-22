@@ -23,7 +23,7 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 mt-5">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">{mode === "add" ? "Add New Room" : "Edit Room"}</h1>
         <p className="text-gray-500 mt-2">
@@ -61,7 +61,7 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
             />
           </div>
         </div>
-
+ 
         {/* Count + Price */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">

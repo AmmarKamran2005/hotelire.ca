@@ -8,6 +8,7 @@ import {
   faBars,
   faSignOutAlt,
   faCog,
+  faHome,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface OwnerNavbarProps {
@@ -171,6 +172,17 @@ export function OwnerNavbar({ onMenuClick, isDarkMode, onToggleDarkMode }: Owner
               >
                 <FontAwesomeIcon icon={faCog} className="w-4 h-4" />
                 Settings
+              </a>
+              <a
+                href="/"
+                className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+                  isDarkMode
+                    ? "text-gray-200 hover:bg-gray-700"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <FontAwesomeIcon icon={faHome} className="w-4 h-4" />
+                Go To Customer Pannel
               </a>
               <button
                 className={`flex items-center gap-3 px-4 py-3 text-sm w-full text-left transition-colors ${
