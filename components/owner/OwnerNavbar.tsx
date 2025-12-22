@@ -182,7 +182,7 @@ export function OwnerNavbar({ onMenuClick, isDarkMode, onToggleDarkMode }: Owner
                 }`}
               >
                 <FontAwesomeIcon icon={faHome} className="w-4 h-4" />
-                Go To Customer Pannel
+               Customer Pannel
               </a>
               <button
                 className={`flex items-center gap-3 px-4 py-3 text-sm w-full text-left transition-colors ${

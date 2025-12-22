@@ -2,6 +2,7 @@
 
 import { Upload, X } from "lucide-react"
 import StyledSelect from "@/components/StyledSelected"
+import { useState } from "react"
 
 interface RoomFormProps {
   mode: "add" | "edit"
@@ -16,11 +17,86 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
   const update = (key: string, value: any) => {
     setRoom({ ...room, [key]: value })
   }
+const [localErrors, setLocalErrors] = useState<Record<string, string>>({})
+const isFormValid = () => {
+  if (!room.roomname?.trim()) return false;
+  if (!room.roomtypeid) return false;
+  if (!room.roomcount || room.roomcount < 1 || room.roomcount > 999) return false;
 
-  const handleImage = (key: "pic1" | "pic2", file: File) => {
-    update(key, file)
-    update(`${key}Preview`, URL.createObjectURL(file))
+  const priceNum = Number(room.price);
+  if (!room.price || isNaN(priceNum) || priceNum <= 0 || priceNum > 99999) return false;
+
+  // Images rules
+  if (mode === "add") {
+    if (!room.pic1 || !room.pic2) return false;
+  } else {
+    if (!room.pic1 && !room.pic1Preview) return false;
+    if (!room.pic2 && !room.pic2Preview) return false;
   }
+
+  // koi local error agar hai
+  if (Object.values(localErrors).some(Boolean)) return false;
+
+  return true;
+};
+
+ const handleImage = (key: "pic1" | "pic2", file: File) => {
+  // ❌ format check
+  if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+    setLocalErrors(prev => ({ ...prev, [key]: "Only JPG or PNG allowed" }));
+    return;
+  }
+
+  // ❌ size check (1MB)
+  if (file.size > 1024 * 1024) {
+    setLocalErrors(prev => ({ ...prev, [key]: "Image must be less than 1MB" }));
+    return;
+  }
+
+  update(key, file);
+  update(`${key}Preview`, URL.createObjectURL(file));
+
+  setLocalErrors(prev => ({ ...prev, [key]: "" }));
+};
+
+  const validate = () => {
+  const e: Record<string, string> = {}
+
+  if (!room.roomname?.trim()) {
+    e.roomname = "Room name is required"
+  }
+
+  if (!room.roomtypeid) {
+    e.roomtypeid = "Room type is required"
+  }
+
+  if (!room.roomcount || room.roomcount < 1) {
+    e.roomcount = "Room count must be at least 1"
+  } else if (room.roomcount > 999) {
+    e.roomcount = "Room count cannot exceed 999"
+  }
+
+  const priceNum = Number(room.price)
+  if (!room.price || isNaN(priceNum) || priceNum <= 0) {
+    e.price = "Valid price required"
+  } else if (priceNum > 99999) {
+    e.price = "Price cannot exceed $99,999"
+  }
+
+  // Images rule
+  if (mode === "add") {
+    if (!room.pic1) e.pic1 = "Image 1 is required"
+    if (!room.pic2) e.pic2 = "Image 2 is required"
+  } else {
+    // edit mode
+    if (!room.pic1 && !room.pic1Preview) e.pic1 = "Image 1 is required"
+    if (!room.pic2 && !room.pic2Preview) e.pic2 = "Image 2 is required"
+  }
+
+  setLocalErrors(e)
+  return Object.keys(e).length === 0
+}
+
 
   return (
     <div className="max-w-4xl mx-auto p-6 mt-5">
@@ -39,11 +115,32 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
               Room Name <span className="text-red-500">*</span>
             </label>
             <input
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent outline-none transition-all"
+className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#59A5B2] ${
+  localErrors.roomname ? "border-red-500" : "border-gray-300"
+}`}
               placeholder="e.g., Deluxe King Suite"
               value={room.roomname}
-              onChange={(e) => update("roomname", e.target.value)}
+             onChange={(e) => {
+  const value = e.target.value;
+
+  // ❌ numbers block
+  if (/[^a-zA-Z\s]/.test(value)) return;
+
+  update("roomname", value);
+
+  if (!value.trim()) {
+    setLocalErrors(prev => ({ ...prev, roomname: "Room name is required" }));
+  } else {
+    setLocalErrors(prev => ({ ...prev, roomname: "" }));
+  }
+}}
+
+
             />
+            {localErrors.roomname && (
+  <p className="text-xs text-red-500">{localErrors.roomname}</p>
+)}
+
           </div>
 
           <div className="space-y-2">
@@ -59,6 +156,10 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
               onChange={(v) => update("roomtypeid", Number(v))}
               placeholder="Select Room Type"
             />
+            {localErrors.roomtypeid && (
+  <p className="text-xs text-red-500">{localErrors.roomtypeid}</p>
+)}
+
           </div>
         </div>
  
@@ -74,8 +175,33 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent outline-none transition-all"
               placeholder="Number of rooms available"
               value={room.roomcount}
-              onChange={(e) => update("roomcount", Number(e.target.value))}
+              onChange={(e) => {
+  const value = e.target.value;
+
+  // ❌ non-numeric block
+  if (!/^\d*$/.test(value)) return;
+
+  // ❌ max 3 digits
+  if (value.length > 3) return;
+
+  const num = Number(value);
+
+  update("roomcount", num);
+
+  if (!num || num < 1) {
+    setLocalErrors(prev => ({ ...prev, roomcount: "Room count must be at least 1" }));
+  } else if (num > 999) {
+    setLocalErrors(prev => ({ ...prev, roomcount: "Room count cannot exceed 999" }));
+  } else {
+    setLocalErrors(prev => ({ ...prev, roomcount: "" }));
+  }
+}}
+
             />
+            {localErrors.roomcount && (
+  <p className="text-xs text-red-500">{localErrors.roomcount}</p>
+)}
+
           </div>
 
           <div className="space-y-2">
@@ -90,8 +216,30 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
                 className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent outline-none transition-all"
                 placeholder="0.00"
                 value={room.price}
-                onChange={(e) => update("price", e.target.value)}
+                onChange={(e) => {
+  const value = e.target.value;
+
+  // allow only digits + dot
+  if (!/^\d*\.?\d*$/.test(value)) return;
+
+  update("price", value);
+
+  const num = Number(value);
+
+  if (!value || isNaN(num) || num <= 0) {
+    setLocalErrors(prev => ({ ...prev, price: "Valid price required" }));
+  } else if (num > 99999) {
+    setLocalErrors(prev => ({ ...prev, price: "Price cannot exceed $99,999" }));
+  } else {
+    setLocalErrors(prev => ({ ...prev, price: "" }));
+  }
+}}
+
               />
+              {localErrors.price && (
+  <p className="text-xs text-red-500">{localErrors.price}</p>
+)}
+
             </div>
           </div>
         </div>
@@ -120,7 +268,7 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium text-gray-700">Click to upload</p>
-                        <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 1MB</p>
                       </div>
                     </div>
                   </div>
@@ -135,9 +283,15 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
                       <button
                         type="button"
                         onClick={() => {
-                          update(key, null)
-                          update(`${key}Preview`, "")
-                        }}
+  update(key, null);
+  update(`${key}Preview`, "");
+
+  setLocalErrors(prev => ({
+    ...prev,
+    [key]: "Image is required"
+  }));
+}}
+
                         className="bg-white hover:bg-red-50 text-red-600 p-3 rounded-full shadow-lg transition-all hover:scale-110"
                       >
                         <X className="w-5 h-5" />
@@ -147,15 +301,33 @@ export function RoomForm({ mode, room, setRoom, roomTypes, onSubmit, errors }: R
                 )}
               </div>
             ))}
+            {localErrors.pic1 && (
+  <p className="text-xs text-red-500">{localErrors.pic1}</p>
+)}
+
+{localErrors.pic2 && (
+  <p className="text-xs text-red-500">{localErrors.pic2}</p>
+)}
+
           </div>
         </div>
 
         <div className="flex gap-4 pt-4">
-          <button
-            type="button"
-            onClick={onSubmit}
-            className="flex-1 py-3.5 px-6 bg-[#59A5B2] text-white font-medium rounded-lg hover:bg-[#4a9199] active:scale-[0.98] transition-all shadow-sm"
-          >
+       <button
+  type="button"
+  disabled={!isFormValid()}
+  onClick={() => {
+    if (!validate()) return;
+    onSubmit();
+  }}
+  className={`flex-1 py-3.5 px-6 font-medium rounded-lg transition-all shadow-sm
+    ${
+      isFormValid()
+        ? "bg-[#59A5B2] text-white hover:bg-[#4a9199] active:scale-[0.98]"
+        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+    }
+  `}
+>
             {mode === "add" ? "Create Room" : "Update Room"}
           </button>
         </div>

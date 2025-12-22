@@ -17,12 +17,12 @@ export interface PropertyDetails {
   subtitle: string
   propertyName: string
   googleMapLink: string
-  photos: {
-    featured: File | null
-    photo2: File | null
-    photo3: File | null
-    photo4: File | null
-    photo5: File | null
+   photos: {
+    featured: File | string | null; // File for new upload, string for existing URL
+    photo2: File | string | null;
+    photo3: File | string | null;
+    photo4: File | string | null;
+    photo5: File | string | null;
   }
   photoPreviews: {
     featured: string

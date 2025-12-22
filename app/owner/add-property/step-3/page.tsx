@@ -29,6 +29,7 @@ interface ISharedSpaces {
 interface IAmenities {
   amenitiesid: number
   amenitiesname: string | null
+  features?: boolean
 }
 
 interface PropertySubmissionPayload {
@@ -75,15 +76,59 @@ export default function Step3Page() {
     checkOutTime: initialAmenities.checkOutTime || "",
     rules: initialAmenities.rules || "",
   })
+
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
-
   const [roomTypes, setRoomTypes] = useState<IRoomType[]>([])
   const [amenitiesData, setAmenitiesData] = useState<IAmenities[]>([])
   const [safetyFeaturesData, setSafetyFeaturesData] = useState<ISafetyFeatures[]>([])
   const [sharedSpacesData, setSharedSpacesData] = useState<ISharedSpaces[]>([])
   const [PropertyId, setPropertyId] = useState("")
+  const [isAmenitiesLoading, setIsAmenitiesLoading] = useState(true);
+  const [issafetyFeatures, setIsSafetyFeaturesLoading] = useState(true);
+  const [issharedSpaces, setIsSharedSpacesLoading] = useState(true);
+  const [selectedAmenityIds, setSelectedAmenityIds] = useState<number[]>([])
+  const [selectedSafetyIds, setSelectedSafetyIds] = useState<number[]>([])
+  const [selectedSharedSpaceIds, setSelectedSharedSpaceIds] = useState<number[]>([])
+  const [selectedFeaturedAmenityIds, setSelectedFeaturedAmenityIds] = useState<number[]>([])
+
+
+
+   const getPropertyInformation = async (propertyid: any) => {
+    try {
+      const response = await axios.get(`${baseUrl}/ownerProperty/getProperties/${propertyid}`, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      });
+
+      if (response.data) {
+        const propertyData = response.data.property[0];
+        console.log("chk", propertyData);
+
+
+     setLocalAmenities(prev => ({
+  ...prev,
+  checkInTime: propertyData.checkintime || "",
+  checkOutTime: propertyData.checkouttime || "",
+  rules: propertyData.houserules || "",
+}));
+
+
+
+
+
+
+
+      }
+    } catch (ex) {
+
+      console.log("Error fetching property data:", ex);
+
+    }
+  }
+
+
 
   useEffect(() => {
     async function loadData() {
@@ -102,8 +147,13 @@ export default function Step3Page() {
 
         setRoomTypes(roomTypesData.roomtypes || [])
         setAmenitiesData(amenitiesDataRes.amenities || [])
+        setIsAmenitiesLoading(false);
+        setIsSafetyFeaturesLoading(false);
+        setIsSharedSpacesLoading(false);
         setSafetyFeaturesData(safetyDataRes.safety || [])
         setSharedSpacesData(sharedSpacesDataRes.sharedspaces || [])
+
+
       } catch (error) {
         console.error("Failed to load data:", error)
       }
@@ -114,9 +164,143 @@ export default function Step3Page() {
 
 
     setPropertyId(String(propertyid));
+    getPropertyInformation(propertyid);
 
     loadData()
   }, [])
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+  useEffect(() => {
+    if (!PropertyId) return
+
+    const fetchPropertyFeatures = async () => {
+      try {
+        const [amenRes, safetyRes, sharedRes] = await Promise.all([
+          axios.post(`${baseUrl}/ownerProperty/getPropertyAmenities`, { propertyid: PropertyId }),
+          axios.post(`${baseUrl}/ownerProperty/getPropertySafetyFeatures`, { propertyid: PropertyId }),
+          axios.post(`${baseUrl}/ownerProperty/getPropertySharedSpaces`, { propertyid: PropertyId }),
+        ])
+
+        setSelectedAmenityIds(
+          amenRes.data.data.map((a: any) => a.amenitiesid)
+        )
+
+        setSelectedFeaturedAmenityIds(
+          amenRes.data.data
+            .filter((a: any) => a.features === true) // comes from backend response
+            .map((a: any) => a.amenitiesid)
+        )
+
+        setSelectedSafetyIds(
+          safetyRes.data.data.map((s: any) => s.safetyfeaturesid)
+        )
+
+        setSelectedSharedSpaceIds(
+          sharedRes.data.data.map((s: any) => s.sharedspacesid)
+        )
+
+      } catch (error) {
+        console.error("Failed to load property features", error)
+      }
+    }
+
+    fetchPropertyFeatures()
+  }, [PropertyId])
+
+  useEffect(() => {
+    if (!amenitiesData.length) return
+
+    setLocalAmenities(prev => ({
+      ...prev,
+      available: amenitiesData.filter(a =>
+        selectedAmenityIds.includes(a.amenitiesid)
+      ),
+    }))
+  }, [amenitiesData, selectedAmenityIds])
+
+
+  useEffect(() => {
+    if (!safetyFeaturesData.length) return
+
+    setLocalAmenities(prev => ({
+      ...prev,
+      safety: safetyFeaturesData.filter(s =>
+        selectedSafetyIds.includes(s.safetyfeaturesid)
+      ),
+    }))
+  }, [safetyFeaturesData, selectedSafetyIds])
+
+
+
+
+  useEffect(() => {
+    if (!sharedSpacesData.length) return
+
+    setLocalAmenities(prev => ({
+      ...prev,
+      sharedSpaces: sharedSpacesData.filter(s =>
+        selectedSharedSpaceIds.includes(s.sharedspacesid)
+      ),
+    }))
+  }, [sharedSpacesData, selectedSharedSpaceIds])
+
+
+
+
+  useEffect(() => {
+    if (!amenities.available.length || !selectedFeaturedAmenityIds.length) return
+
+    setLocalAmenities(prev => ({
+      ...prev,
+      featured: prev.available.filter(a =>
+        selectedFeaturedAmenityIds.includes(a.amenitiesid)
+      ),
+    }))
+  }, [amenities.available, selectedFeaturedAmenityIds])
+
+
+
+
+
+
+  const [isRoomAvailable, setIsRoomAvailable] = useState(null);
+
+  useEffect(() => {
+    const checkRoomAvailability = async () => {
+      if (!PropertyId) return;
+
+      try {
+        const response = await axios.post(
+          `${baseUrl}/ownerProperty/isRoomAvailableinProperty`,
+          { PropertyId },
+          { withCredentials: true }
+        );
+
+        setIsRoomAvailable(response.data.isAvailable);
+        console.log("Room availability check:", response.data);
+
+
+
+      } catch (error) {
+        console.error("Error checking room availability:", error);
+      }
+    };
+
+    checkRoomAvailability();
+  }, [PropertyId]);
+
 
 
 
@@ -289,16 +473,26 @@ export default function Step3Page() {
   }
 
   const canProceed = () => {
-    if (rooms.length === 0) return false
+    if (isRoomAvailable === false) {
+      if (rooms.length === 0) return false
+    }
 
-    return (
-      rooms.every(
-        (room) =>
-          room.name && room.roomtypeid && room.price && Number.parseFloat(room.price) > 0,
-      ) &&
-      amenities.checkInTime &&
-      amenities.checkOutTime
-    )
+    if (isRoomAvailable === false) {
+      return (
+        rooms.every(
+          (room) =>
+            room.name && room.roomtypeid && room.price && Number.parseFloat(room.price) > 0,
+        ) &&
+        amenities.checkInTime &&
+        amenities.checkOutTime
+      )
+    } else {
+
+      return (
+        amenities.checkInTime &&
+        amenities.checkOutTime
+      )
+    }
   }
 
   const buildStep3FormData = (payload: PropertySubmissionPayload) => {
@@ -308,7 +502,6 @@ export default function Step3Page() {
     fd.append("checkInTime", payload.checkInTime || "");
     fd.append("checkOutTime", payload.checkOutTime || "");
     fd.append("rules", payload.rules || "");
-
     fd.append("availableAmenitiesIds", JSON.stringify(payload.availableAmenitiesIds));
     fd.append("featuredAmenitiesIds", JSON.stringify(payload.featuredAmenitiesIds));
     fd.append("safetyFeaturesIds", JSON.stringify(payload.safetyFeaturesIds));
@@ -343,6 +536,24 @@ export default function Step3Page() {
       alert("User must first fill step 1 and step 2 form! If already filled then retry it.");
       return;
     }
+    const hasRoomsPayload =
+      Array.isArray(rooms) &&
+      rooms.length > 0 &&
+      rooms.some(room =>
+        room.name ||
+        room.roomtypeid ||
+        room.count ||
+        room.price ||
+        room.image1 ||
+        room.image2
+      )
+
+    // use it here
+    if (!hasRoomsPayload && isRoomAvailable === false) {
+      alert("At least one room is required")
+      return
+    }
+
 
     const roomsToSubmit = rooms
 
@@ -414,7 +625,6 @@ export default function Step3Page() {
       } else {
         console.error("Submission error:", error);
         alert("Submission error: Something went wrong!");
-
       }
 
     }
@@ -532,6 +742,34 @@ export default function Step3Page() {
     )
   }
 
+
+
+
+
+
+  const AmenitiesShimmer = () => {
+    return (
+      <section className="space-y-4 animate-pulse">
+        <div className="h-7 w-56 bg-gray-200 rounded"></div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-2 p-3 border border-gray-200 rounded-lg"
+            >
+              <div className="w-4 h-4 bg-gray-300 rounded"></div>
+              <div className="h-4 w-24 bg-gray-300 rounded"></div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
+
+
+
   return (
     <div className="w-full">
       <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
@@ -542,353 +780,374 @@ export default function Step3Page() {
 
       <div className="max-w-5xl mx-auto px-6 lg:px-12 py-12">
         <div className="space-y-12">
-          <div className="space-y-4">
-            <h1
-              className="text-4xl md:text-5xl font-bold text-[#2e2e2e]"
-              style={{ fontFamily: "Poppins, sans-serif" }}
-              data-testid="heading-step3"
-            >
-              Rooms, Amenities & Policies
-            </h1>
-            <p className="text-lg text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
-              Add rooms, select amenities, safety features, and set your property policies
-            </p>
-          </div>
 
-          <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
-                Rooms
-              </h2>
-              <button
-                onClick={addRoom}
-                className="flex items-center gap-2 px-4 h-10 bg-[#59A5B2] text-white rounded-lg hover:bg-[#4a8a95] transition-colors"
-                style={{ fontFamily: "Inter, sans-serif" }}
-                data-testid="button-add-room"
-              >
-                <Plus className="w-5 h-5" />
-                Add Room
-              </button>
-            </div>
+          {
 
-            {rooms.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl">
-                <Bed className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                  No rooms added yet. Click "Add Room" to get started.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {rooms.map((room, index) => (
-                  <div key={room.id} className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 relative">
-                    <button
-                      onClick={() => removeRoom(room.id)}
-                      className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors"
-                      data-testid={`button-remove-room-${room.id}`}
-                      title="Remove Room"
-                    >
-                      <Trash2 className="w-5 h-5 text-red-600 hover:text-red-700" />
-                    </button>
-                   
-                    <div>
-                      <h3
-                        className="text-lg font-semibold text-gray-900 pr-10"
-                        style={{ fontFamily: "Poppins, sans-serif" }}
-                      >
-                        Room {index + 1}
-                        
-                      </h3>
-                    </div>
+            isRoomAvailable === null ? <> <div className="space-y-6">
+              <div className="h-10 w-3/4 bg-gray-200 rounded animate-pulse" />
+              <div className="h-6 w-1/2 bg-gray-200 rounded animate-pulse" />
+              <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
+            </div></> :
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label
-                          className="text-sm font-medium text-gray-700"
-                          style={{ fontFamily: "Inter, sans-serif" }}
-                        >
-                          Room Name *
-                        </label>
-                        <input
-                          type="text"
-                          value={room.name}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            updateRoom(room.id, "name", value)
-                            if (!value.trim()) {
-                              setErrors({ ...errors, [`room-${room.id}-name`]: "Room name is required" })
-                            } else {
-                              setErrors({ ...errors, [`room-${room.id}-name`]: "" })
-                            }
-                          }}
-                          onBlur={(e) => {
-                            const value = e.target.value.trim()
-                            if (!value) {
-                              setErrors({ ...errors, [`room-${room.id}-name`]: "Room name is required" })
-                            }
-                          }}
-                          placeholder="e.g., Deluxe Suite"
-                          className={`w-full h-10 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#59A5B2] ${errors[`room-${room.id}-name`] ? "border-red-500" : "border-gray-300"
-                            }`}
-                          style={{ fontFamily: "Inter, sans-serif" }}
-                          data-testid={`input-room-name-${room.id}`}
-                        />
-                        {errors[`room-${room.id}-name`] && (
-                          <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                            {errors[`room-${room.id}-name`]}
-                          </p>
-                        )}
-                      </div>
 
-                      <div className="space-y-2">
-                        <label
-                          className="text-sm font-medium text-gray-700"
-                          style={{ fontFamily: "Inter, sans-serif" }}
-                        >
-                          Room Type *
-                        </label>
-                        <StyledSelect
-                          options={roomTypes.map((type) => ({
-                            value: type.roomtypeid.toString(),
-                            label: type.roomtypename || "",
-                          }))}
-                          value={room.roomtypeid.toString()}
-                          onChange={(value) => {
-                            updateRoom(room.id, "roomtypeid", Number.parseInt(value))
-                            if (!value) {
-                              setErrors({ ...errors, [`room-${room.id}-roomtypeid`]: "Room type is required" })
-                            } else {
-                              setErrors({ ...errors, [`room-${room.id}-roomtypeid`]: "" })
-                            }
-                          }}
-                          placeholder="Select type"
-                          hasError={!!errors[`room-${room.id}-roomtypeid`]}
-                          testId={`select-room-type-${room.id}`}
-                        />
-                        {errors[`room-${room.id}-roomtypeid`] && (
-                          <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                            {errors[`room-${room.id}-roomtypeid`]}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <label
-                          className="text-sm font-medium text-gray-700"
-                          style={{ fontFamily: "Inter, sans-serif" }}
-                        >
-                          Room Count *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="999"
-                          value={room.count}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            const numValue = Number.parseInt(value)
-                            updateRoom(room.id, "count", numValue || 0)
-                            if (!value || isNaN(numValue) || numValue < 1) {
-                              setErrors({ ...errors, [`room-${room.id}-count`]: "Room count must be at least 1" })
-                            } else if (value.length > 3 || numValue > 999) {
-                              setErrors({ ...errors, [`room-${room.id}-count`]: "Room count cannot exceed 999" })
-                            } else {
-                              setErrors({ ...errors, [`room-${room.id}-count`]: "" })
-                            }
-                          }}
-                          className={`w-full h-10 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#59A5B2] ${errors[`room-${room.id}-count`] ? "border-red-500" : "border-gray-300"
-                            }`}
-                          style={{ fontFamily: "Inter, sans-serif" }}
-                          data-testid={`input-room-count-${room.id}`}
-                        />
-                        {errors[`room-${room.id}-count`] && (
-                          <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                            {errors[`room-${room.id}-count`]}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <label
-                          className="text-sm font-medium text-gray-700"
-                          style={{ fontFamily: "Inter, sans-serif" }}
-                        >
-                          Price (CAD/night) *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="99999"
-                          step="0.01"
-                          value={room.price}
-                          onChange={(e) => {
-                            const value = e.target.value.trim()
-                            updateRoom(room.id, "price", value)
-                            const numValue = Number.parseFloat(value)
-                            const digitsOnly = value.split(".")[0]
-                            if (!value || isNaN(numValue) || numValue <= 0) {
-                              setErrors({ ...errors, [`room-${room.id}-price`]: "Valid price required" })
-                            } else if (digitsOnly.length > 5) {
-                              setErrors({ ...errors, [`room-${room.id}-price`]: "Price cannot exceed 5 digits" })
-                            } else if (numValue > 99999) {
-                              setErrors({ ...errors, [`room-${room.id}-price`]: "Price cannot exceed $99,999" })
-                            } else {
-                              setErrors({ ...errors, [`room-${room.id}-price`]: "" })
-                            }
-                          }}
-                          placeholder="0.00"
-                          className={`w-full h-10 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#59A5B2] ${errors[`room-${room.id}-price`] ? "border-red-500" : "border-gray-300"
-                            }`}
-                          style={{ fontFamily: "Inter, sans-serif" }}
-                          data-testid={`input-room-price-${room.id}`}
-                        />
-                        {errors[`room-${room.id}-price`] && (
-                          <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                            {errors[`room-${room.id}-price`]}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-gray-700" style={{ fontFamily: "Inter, sans-serif" }}>
-                        Room Pictures (2 images required) *
-                      </label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <p className="text-xs text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
-                            Image 1 *
-                          </p>
-                          {!room.image1Preview ? (
-                            <div className="relative aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#59A5B2] transition-colors">
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/jpg,image/png"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0]
-                                  if (file) handleRoomImage(room.id, "image1", file)
-                                }}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                data-testid={`input-room-image1-${room.id}`}
-                              />
-                              <Upload className="w-8 h-8 text-[#59A5B2] mb-2" />
-                              <p
-                                className="text-xs text-gray-600 text-center px-2"
-                                style={{ fontFamily: "Inter, sans-serif" }}
-                              >
-                                JPG/PNG, max 2MB
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="relative aspect-video rounded-lg overflow-hidden group">
-                              <img
-                                src={room.image1Preview || "/placeholder.svg"}
-                                alt="Room Image 1"
-                                className="w-full h-full object-cover"
-                              />
-                              <button
-                                onClick={() => {
-                                  updateRoom(room.id, "image1", null)
-                                  updateRoom(room.id, "image1Preview", "")
-                                }}
-                                className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                data-testid={`button-remove-image1-${room.id}`}
-                              >
-                                <X className="w-5 h-5 text-gray-700" />
-                              </button>
-                            </div>
-                          )}
-                          {errors[`room-${room.id}-image1`] && (
-                            <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                              {errors[`room-${room.id}-image1`]}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <p className="text-xs text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
-                            Image 2 *
-                          </p>
-                          {!room.image2Preview ? (
-                            <div className="relative aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#59A5B2] transition-colors">
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/jpg,image/png"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0]
-                                  if (file) handleRoomImage(room.id, "image2", file)
-                                }}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                data-testid={`input-room-image2-${room.id}`}
-                              />
-                              <Upload className="w-8 h-8 text-[#59A5B2] mb-2" />
-                              <p
-                                className="text-xs text-gray-600 text-center px-2"
-                                style={{ fontFamily: "Inter, sans-serif" }}
-                              >
-                                JPG/PNG, max 2MB
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="relative aspect-video rounded-lg overflow-hidden group">
-                              <img
-                                src={room.image2Preview || "/placeholder.svg"}
-                                alt="Room Image 2"
-                                className="w-full h-full object-cover"
-                              />
-                              <button
-                                onClick={() => {
-                                  updateRoom(room.id, "image2", null)
-                                  updateRoom(room.id, "image2Preview", "")
-                                }}
-                                className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                data-testid={`button-remove-image2-${room.id}`}
-                              >
-                                <X className="w-5 h-5 text-gray-700" />
-                              </button>
-                            </div>
-                          )}
-                          {errors[`room-${room.id}-image2`] && (
-                            <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                              {errors[`room-${room.id}-image2`]}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
-              Available Amenities
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {amenitiesData.map((amenity) => (
-                <label
-                  key={amenity.amenitiesid}
-                  className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${amenities.available.some((a) => a.amenitiesid === amenity.amenitiesid)
-                    ? "border-[#59A5B2] bg-[#59A5B2]/5"
-                    : "border-gray-300 hover:border-gray-400"
-                    }`}
+              isRoomAvailable ? <>
+                <h1
+                  className="text-4xl md:text-5xl font-bold text-[#2e2e2e]"
+                  style={{ fontFamily: "Poppins, sans-serif" }}
+                  data-testid="heading-step3"
                 >
-                  <input
-                    type="checkbox"
-                    checked={amenities.available.some((a) => a.amenitiesid === amenity.amenitiesid)}
-                    onChange={() => toggleAmenity(amenity)}
-                    className="w-4 h-4 text-[#59A5B2] rounded focus:ring-[#59A5B2]"
-                  />
-                  <span className="text-sm text-gray-700" style={{ fontFamily: "Inter, sans-serif" }}>
-                    {amenity.amenitiesname}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </section>
+                  Rooms, Amenities & Policies
+                </h1>
+                <p className="text-lg text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
+                  select amenities, safety features, and set your property policies. <br />
+                  <i className="text-sm">Please add and edit rooms from your portal.</i>
+                </p>
+              </> :
+                <><div className="space-y-4">
+                  <h1
+                    className="text-4xl md:text-5xl font-bold text-[#2e2e2e]"
+                    style={{ fontFamily: "Poppins, sans-serif" }}
+                    data-testid="heading-step3"
+                  >
+                    Rooms, Amenities & Policies
+                  </h1>
+                  <p className="text-lg text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
+                    Add rooms, select amenities, safety features, and set your property policies
+                  </p>
+                </div><section className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+                        Rooms
+                      </h2>
+                      <button
+                        onClick={addRoom}
+                        className="flex items-center gap-2 px-4 h-10 bg-[#59A5B2] text-white rounded-lg hover:bg-[#4a8a95] transition-colors"
+                        style={{ fontFamily: "Inter, sans-serif" }}
+                        data-testid="button-add-room"
+                      >
+                        <Plus className="w-5 h-5" />
+                        Add Room
+                      </button>
+                    </div>
 
+                    {rooms.length === 0 ? (
+                      <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl">
+                        <Bed className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                          No rooms added yet. Click "Add Room" to get started.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {rooms.map((room, index) => (
+                          <div key={room.id} className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 relative">
+                            <button
+                              onClick={() => removeRoom(room.id)}
+                              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors"
+                              data-testid={`button-remove-room-${room.id}`}
+                              title="Remove Room"
+                            >
+                              <Trash2 className="w-5 h-5 text-red-600 hover:text-red-700" />
+                            </button>
+
+                            <div>
+                              <h3
+                                className="text-lg font-semibold text-gray-900 pr-10"
+                                style={{ fontFamily: "Poppins, sans-serif" }}
+                              >
+                                Room {index + 1}
+
+                              </h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label
+                                  className="text-sm font-medium text-gray-700"
+                                  style={{ fontFamily: "Inter, sans-serif" }}
+                                >
+                                  Room Name *
+                                </label>
+                                <input
+                                  type="text"
+                                  value={room.name}
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                    updateRoom(room.id, "name", value)
+                                    if (!value.trim()) {
+                                      setErrors({ ...errors, [`room-${room.id}-name`]: "Room name is required" })
+                                    } else {
+                                      setErrors({ ...errors, [`room-${room.id}-name`]: "" })
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    const value = e.target.value.trim()
+                                    if (!value) {
+                                      setErrors({ ...errors, [`room-${room.id}-name`]: "Room name is required" })
+                                    }
+                                  }}
+                                  placeholder="e.g., Deluxe Suite"
+                                  className={`w-full h-10 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#59A5B2] ${errors[`room-${room.id}-name`] ? "border-red-500" : "border-gray-300"}`}
+                                  style={{ fontFamily: "Inter, sans-serif" }}
+                                  data-testid={`input-room-name-${room.id}`} />
+                                {errors[`room-${room.id}-name`] && (
+                                  <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                                    {errors[`room-${room.id}-name`]}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                <label
+                                  className="text-sm font-medium text-gray-700"
+                                  style={{ fontFamily: "Inter, sans-serif" }}
+                                >
+                                  Room Type *
+                                </label>
+                                <StyledSelect
+                                  options={roomTypes.map((type) => ({
+                                    value: type.roomtypeid.toString(),
+                                    label: type.roomtypename || "",
+                                  }))}
+                                  value={room.roomtypeid.toString()}
+                                  onChange={(value) => {
+                                    updateRoom(room.id, "roomtypeid", Number.parseInt(value))
+                                    if (!value) {
+                                      setErrors({ ...errors, [`room-${room.id}-roomtypeid`]: "Room type is required" })
+                                    } else {
+                                      setErrors({ ...errors, [`room-${room.id}-roomtypeid`]: "" })
+                                    }
+                                  }}
+                                  placeholder="Select type"
+                                  hasError={!!errors[`room-${room.id}-roomtypeid`]}
+                                  testId={`select-room-type-${room.id}`} />
+                                {errors[`room-${room.id}-roomtypeid`] && (
+                                  <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                                    {errors[`room-${room.id}-roomtypeid`]}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                <label
+                                  className="text-sm font-medium text-gray-700"
+                                  style={{ fontFamily: "Inter, sans-serif" }}
+                                >
+                                  Room Count *
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="999"
+                                  value={room.count}
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                    const numValue = Number.parseInt(value)
+                                    updateRoom(room.id, "count", numValue || 0)
+                                    if (!value || isNaN(numValue) || numValue < 1) {
+                                      setErrors({ ...errors, [`room-${room.id}-count`]: "Room count must be at least 1" })
+                                    } else if (value.length > 3 || numValue > 999) {
+                                      setErrors({ ...errors, [`room-${room.id}-count`]: "Room count cannot exceed 999" })
+                                    } else {
+                                      setErrors({ ...errors, [`room-${room.id}-count`]: "" })
+                                    }
+                                  }}
+                                  className={`w-full h-10 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#59A5B2] ${errors[`room-${room.id}-count`] ? "border-red-500" : "border-gray-300"}`}
+                                  style={{ fontFamily: "Inter, sans-serif" }}
+                                  data-testid={`input-room-count-${room.id}`} />
+                                {errors[`room-${room.id}-count`] && (
+                                  <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                                    {errors[`room-${room.id}-count`]}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                <label
+                                  className="text-sm font-medium text-gray-700"
+                                  style={{ fontFamily: "Inter, sans-serif" }}
+                                >
+                                  Price (CAD/night) *
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="99999"
+                                  step="0.01"
+                                  value={room.price}
+                                  onChange={(e) => {
+                                    const value = e.target.value.trim()
+                                    updateRoom(room.id, "price", value)
+                                    const numValue = Number.parseFloat(value)
+                                    const digitsOnly = value.split(".")[0]
+                                    if (!value || isNaN(numValue) || numValue <= 0) {
+                                      setErrors({ ...errors, [`room-${room.id}-price`]: "Valid price required" })
+                                    } else if (digitsOnly.length > 5) {
+                                      setErrors({ ...errors, [`room-${room.id}-price`]: "Price cannot exceed 5 digits" })
+                                    } else if (numValue > 99999) {
+                                      setErrors({ ...errors, [`room-${room.id}-price`]: "Price cannot exceed $99,999" })
+                                    } else {
+                                      setErrors({ ...errors, [`room-${room.id}-price`]: "" })
+                                    }
+                                  }}
+                                  placeholder="0.00"
+                                  className={`w-full h-10 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#59A5B2] ${errors[`room-${room.id}-price`] ? "border-red-500" : "border-gray-300"}`}
+                                  style={{ fontFamily: "Inter, sans-serif" }}
+                                  data-testid={`input-room-price-${room.id}`} />
+                                {errors[`room-${room.id}-price`] && (
+                                  <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                                    {errors[`room-${room.id}-price`]}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              <label className="text-sm font-medium text-gray-700" style={{ fontFamily: "Inter, sans-serif" }}>
+                                Room Pictures (2 images required) *
+                              </label>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <p className="text-xs text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
+                                    Image 1 *
+                                  </p>
+                                  {!room.image1Preview ? (
+                                    <div className="relative aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#59A5B2] transition-colors">
+                                      <input
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0]
+                                          if (file) handleRoomImage(room.id, "image1", file)
+                                        }}
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        data-testid={`input-room-image1-${room.id}`} />
+                                      <Upload className="w-8 h-8 text-[#59A5B2] mb-2" />
+                                      <p
+                                        className="text-xs text-gray-600 text-center px-2"
+                                        style={{ fontFamily: "Inter, sans-serif" }}
+                                      >
+                                        JPG/PNG, max 2MB
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div className="relative aspect-video rounded-lg overflow-hidden group">
+                                      <img
+                                        src={room.image1Preview || "/placeholder.svg"}
+                                        alt="Room Image 1"
+                                        className="w-full h-full object-cover" />
+                                      <button
+                                        onClick={() => {
+                                          updateRoom(room.id, "image1", null)
+                                          updateRoom(room.id, "image1Preview", "")
+                                        }}
+                                        className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        data-testid={`button-remove-image1-${room.id}`}
+                                      >
+                                        <X className="w-5 h-5 text-gray-700" />
+                                      </button>
+                                    </div>
+                                  )}
+                                  {errors[`room-${room.id}-image1`] && (
+                                    <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                                      {errors[`room-${room.id}-image1`]}
+                                    </p>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2">
+                                  <p className="text-xs text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
+                                    Image 2 *
+                                  </p>
+                                  {!room.image2Preview ? (
+                                    <div className="relative aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#59A5B2] transition-colors">
+                                      <input
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0]
+                                          if (file) handleRoomImage(room.id, "image2", file)
+                                        }}
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        data-testid={`input-room-image2-${room.id}`} />
+                                      <Upload className="w-8 h-8 text-[#59A5B2] mb-2" />
+                                      <p
+                                        className="text-xs text-gray-600 text-center px-2"
+                                        style={{ fontFamily: "Inter, sans-serif" }}
+                                      >
+                                        JPG/PNG, max 2MB
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div className="relative aspect-video rounded-lg overflow-hidden group">
+                                      <img
+                                        src={room.image2Preview || "/placeholder.svg"}
+                                        alt="Room Image 2"
+                                        className="w-full h-full object-cover" />
+                                      <button
+                                        onClick={() => {
+                                          updateRoom(room.id, "image2", null)
+                                          updateRoom(room.id, "image2Preview", "")
+                                        }}
+                                        className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        data-testid={`button-remove-image2-${room.id}`}
+                                      >
+                                        <X className="w-5 h-5 text-gray-700" />
+                                      </button>
+                                    </div>
+                                  )}
+                                  {errors[`room-${room.id}-image2`] && (
+                                    <p className="text-xs text-red-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                                      {errors[`room-${room.id}-image2`]}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section></>
+          }
+
+
+
+
+          {isAmenitiesLoading ? (
+            <AmenitiesShimmer />
+          ) : (
+
+            <section className="space-y-4">
+              <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+                Available Amenities
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+
+                {
+
+                  amenitiesData.map((amenity) => (
+                    <label
+                      key={amenity.amenitiesid}
+                      className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${amenities.available.some((a) => a.amenitiesid === amenity.amenitiesid)
+                        ? "border-[#59A5B2] bg-[#59A5B2]/5"
+                        : "border-gray-300 hover:border-gray-400"
+                        }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={amenities.available.some((a) => a.amenitiesid === amenity.amenitiesid)}
+                        onChange={() => toggleAmenity(amenity)}
+                        className="w-4 h-4 text-[#59A5B2] rounded focus:ring-[#59A5B2]"
+                      />
+                      <span className="text-sm text-gray-700" style={{ fontFamily: "Inter, sans-serif" }}>
+                        {amenity.amenitiesname}
+                      </span>
+                    </label>
+                  ))}
+              </div>
+            </section>
+          )}
           {amenities.available.length > 0 && (
             <section className="space-y-4">
               <div>
@@ -927,32 +1186,38 @@ export default function Step3Page() {
             </section>
           )}
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
-              Safety & Property Features
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {safetyFeaturesData.map((feature) => (
-                <label
-                  key={feature.safetyfeaturesid}
-                  className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${amenities.safety.some((s) => s.safetyfeaturesid === feature.safetyfeaturesid)
-                    ? "border-[#59A5B2] bg-[#59A5B2]/5"
-                    : "border-gray-300 hover:border-gray-400"
-                    }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={amenities.safety.some((s) => s.safetyfeaturesid === feature.safetyfeaturesid)}
-                    onChange={() => toggleSafety(feature)}
-                    className="w-4 h-4 text-[#59A5B2] rounded focus:ring-[#59A5B2]"
-                  />
-                  <span className="text-sm text-gray-700" style={{ fontFamily: "Inter, sans-serif" }}>
-                    {feature.safetyfeaturesname}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </section>
+
+          {issafetyFeatures ? (
+            <AmenitiesShimmer />
+          ) : (
+            <section className="space-y-4">
+              <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+                Safety & Property Features
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {safetyFeaturesData.map((feature) => (
+                  <label
+                    key={feature.safetyfeaturesid}
+                    className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${amenities.safety.some((s) => s.safetyfeaturesid === feature.safetyfeaturesid)
+                      ? "border-[#59A5B2] bg-[#59A5B2]/5"
+                      : "border-gray-300 hover:border-gray-400"
+                      }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={amenities.safety.some((s) => s.safetyfeaturesid === feature.safetyfeaturesid)}
+                      onChange={() => toggleSafety(feature)}
+                      className="w-4 h-4 text-[#59A5B2] rounded focus:ring-[#59A5B2]"
+                    />
+                    <span className="text-sm text-gray-700" style={{ fontFamily: "Inter, sans-serif" }}>
+                      {feature.safetyfeaturesname}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </section>
+          )}
+
 
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
@@ -1001,32 +1266,40 @@ export default function Step3Page() {
             </div>
           </section>
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
-              Shared Spaces
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {sharedSpacesData.map((space) => (
-                <label
-                  key={space.sharedspacesid}
-                  className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${amenities.sharedSpaces.some((s) => s.sharedspacesid === space.sharedspacesid)
-                    ? "border-[#59A5B2] bg-[#59A5B2]/5"
-                    : "border-gray-300 hover:border-gray-400"
-                    }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={amenities.sharedSpaces.some((s) => s.sharedspacesid === space.sharedspacesid)}
-                    onChange={() => toggleSharedSpace(space)}
-                    className="w-4 h-4 text-[#59A5B2] rounded focus:ring-[#59A5B2]"
-                  />
-                  <span className="text-sm text-gray-700" style={{ fontFamily: "Inter, sans-serif" }}>
-                    {space.sharedspacesname}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </section>
+
+
+          {issharedSpaces ? (
+            <AmenitiesShimmer />
+          ) : (
+            <section className="space-y-4">
+              <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+                Shared Spaces
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {sharedSpacesData.map((space) => (
+                  <label
+                    key={space.sharedspacesid}
+                    className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${amenities.sharedSpaces.some((s) => s.sharedspacesid === space.sharedspacesid)
+                      ? "border-[#59A5B2] bg-[#59A5B2]/5"
+                      : "border-gray-300 hover:border-gray-400"
+                      }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={amenities.sharedSpaces.some((s) => s.sharedspacesid === space.sharedspacesid)}
+                      onChange={() => toggleSharedSpace(space)}
+                      className="w-4 h-4 text-[#59A5B2] rounded focus:ring-[#59A5B2]"
+                    />
+                    <span className="text-sm text-gray-700" style={{ fontFamily: "Inter, sans-serif" }}>
+                      {space.sharedspacesname}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </section>
+          )}
+
+
 
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>

@@ -164,7 +164,15 @@ const filteredProperties = useMemo(() => {
   });
 }, [propertyList, searchQuery, statusFilter]);
 
-
+const handleTogglePropertyStatus = (propertyId: number) => {
+  setPropertyList(prev =>
+    prev.map(p =>
+      p.propertyid === propertyId
+        ? { ...p, availablestatus: !p.availablestatus }
+        : p
+    )
+  );
+};
   
   const handleDelete = () => {
     if (deleteId) {
@@ -215,7 +223,7 @@ const filteredProperties = useMemo(() => {
               data-testid="input-search-properties"
             />
           </div>
-          <div className="flex gap-2">
+          {/* <div className="flex gap-2">
             {(["All", "Active", "Inactive"] as const).map((filter) => (
               <button
                 key={filter}
@@ -229,7 +237,7 @@ const filteredProperties = useMemo(() => {
                 {filter}
               </button>
             ))}
-          </div>
+          </div> */}
         </div>
 
 
@@ -240,7 +248,12 @@ const filteredProperties = useMemo(() => {
           <AnimatePresence>
             {filteredProperties ?
               filteredProperties.map((property) => (
-                <PropertyCard key={property.propertyid} property={property} onDelete={() => setDeleteId(property.propertyid)} />
+                <PropertyCard
+  key={property.propertyid}
+  property={property}
+  onDelete={() => setDeleteId(property.propertyid)}
+  onToggleStatus={handleTogglePropertyStatus}
+/>
               )) : 
               <div className="col-span-full text-center py-12">
                 <p className="text-gray-500 dark:text-gray-400">No properties found.</p>
@@ -284,7 +297,61 @@ function getIcon(iconName: string): Icons.IconDefinition | undefined {
 
 
 
-function PropertyCard({ property, onDelete }: { property: Property; onDelete: () => void }) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// function PropertyCard({ property, onDelete }: { property: Property; onDelete: () => void }) {
+function PropertyCard({
+  property,
+  onDelete,
+  onToggleStatus,
+}: {
+  property: Property;
+  onDelete: () => void;
+  onToggleStatus: (id: number) => void;
+}) {
 
   console.log("prop", property);
   return (
@@ -321,14 +388,14 @@ function PropertyCard({ property, onDelete }: { property: Property; onDelete: ()
         </div>
 
         {/* Featured Badge */}
-        {property.featured && (
+        {/* {property.featured && (
           <div className="absolute top-3 left-3">
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#FEBC11] text-black shadow-sm">
               <Star className="w-3 h-3 fill-black text-black mr-1" />
               Featured
             </span>
           </div>
-        )}
+        )} */}
 
         {/* Rating Bubble */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-white/95 dark:bg-zinc-900/95 backdrop-blur px-2.5 py-1.5 rounded-full shadow-lg text-xs font-semibold text-foreground">
@@ -397,14 +464,26 @@ function PropertyCard({ property, onDelete }: { property: Property; onDelete: ()
 
         {/* Footer */}
         <div className="mt-5 pt-4 border-t border-border/50 flex items-center justify-between">
-          <div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-bold text-[#59A5B2]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                ${property.price}
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">/ night</span>
-            </div>
-          </div>
+<div className="flex items-center gap-2">
+  <span className="text-sm font-medium text-muted-foreground">
+    Status
+  </span>
+
+<button
+  onClick={() => onToggleStatus(property.propertyid)}
+  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+    property.availablestatus ? "bg-green-500" : "bg-zinc-400"
+  }`}
+>
+  <span
+    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+      property.availablestatus ? "translate-x-6" : "translate-x-1"
+    }`}
+  />
+</button>
+
+</div>
+
 
           <div className="flex items-center gap-1 opacity-100 hover:opacity-100 transition-opacity duration-200">
             <DropdownMenu>

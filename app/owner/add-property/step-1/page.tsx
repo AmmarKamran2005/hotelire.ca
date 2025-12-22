@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useProperty } from "../PropertyContext";
 import { ProgressSteps } from "../components/ProgressSteps";
 import { provinceToCities } from "@/lib/province-to-cities";
@@ -15,6 +15,7 @@ import { OWNERSHIP_DOCUMENT_TYPES } from "@/types/property";
 import { ChevronDown, Upload, X, MapPin, Home } from "lucide-react";
 import StyledSelect from "@/components/StyledSelected";
 import axios from "axios";
+import Link from "next/link";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL
@@ -51,6 +52,8 @@ interface UserCity {
 
 export default function Step1Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");   //property id for edit case
   // --- 1. VIDEO REF SETUP ---
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -73,12 +76,18 @@ export default function Step1Page() {
 
 
 
+
   // ---------------------------
   const { location, setLocation, nextStep, saveAsDraft } = useProperty();
 
   const [selectedOption, setSelectedOption] = useState<1 | 2 | null>(
     location.useProfileAddress ? 1 : location.province ? 2 : null
   );
+
+  const [isEditingProperty, setisEditingProperty] = useState(false);
+
+
+
   const [formData, setFormData] = useState({
     province: location.province,
     city: location.city,
@@ -86,13 +95,128 @@ export default function Step1Page() {
     postalCode: location.postalCode,
     documentType: location.ownershipDocument?.type || "",
     documentFile: location.ownershipDocument?.file || null,
+    documentFileUrl: "",
     documentPreview: location.ownershipDocument?.preview || "",
     canadian_provinceid: "",
     canadian_cityid: "",
-
-
-
   });
+
+
+  interface someIdsforEditCase {
+    canadian_province_id: number;
+    canadian_city_id: number;
+    pdftypeid: number;
+
+  }
+
+  const [city_prov_doc_ids, setcity_prov_doc_ids] = useState<someIdsforEditCase[]>([]);
+
+  useEffect(() => {
+
+    if (id) {
+
+      const fetchPropertyDatatoEdit = async () => {
+        try {
+          const response = await axios.get(`${baseUrl}/ownerProperty/getProperties/${id}`, {
+            headers: { "Content-Type": "application/json" },
+            withCredentials: true,
+          });
+          const propdata = response.data.property[0];
+
+
+
+          setisEditingProperty(true);
+
+
+          if (propdata.propertylocationid === 2) {
+            setcity_prov_doc_ids([
+              {
+                canadian_province_id: propdata.canadian_province_id,
+                canadian_city_id: propdata.canadian_city_id,
+                pdftypeid: propdata.pdftypeid,
+              }
+            ]);
+          }
+
+          if (propdata.propertylocationid === 2) {
+            setcity_prov_doc_ids([
+              {
+                canadian_province_id: Number(profileAddress.province_id),
+                canadian_city_id: Number(profileAddress.city_id),
+                pdftypeid: propdata.pdftypeid,
+              }
+            ]);
+          }
+
+
+
+
+          console.log("Property data for edit:", propdata);
+
+
+          setSelectedOption(propdata.propertylocationid)
+
+          if (propdata.propertylocationid === 2) {
+            setFormData(prev => ({
+              ...prev,
+              postalCode: propdata.postalcode,
+              street: propdata.address,
+              documentFile: propdata.residentialdocpdf,
+              documentType: propdata.pdftypeid,
+              documentFileUrl: propdata.residentialdocpdf || "",
+              city: propdata.canadian_cities.canadian_city_name,
+              province: propdata.canadian_states.canadian_province_name,
+              canadian_provinceid: propdata.canadian_states.canadian_province_id,
+              canadian_cityid: propdata.canadian_cities.canadian_city_id,
+
+            }));
+
+          }
+
+          if (propdata.propertylocationid === 1) {
+            setFormData(prev => ({
+              ...prev,
+              postalCode: propdata.postalcode,
+              street: propdata.address,
+              documentFile: propdata.residentialdocpdf,
+              documentType: propdata.pdftypeid,
+              documentFileUrl: propdata.residentialdocpdf || "",
+              city: profileAddress.city_id,
+              province: profileAddress.province_id,
+              canadian_provinceid: propdata.canadian_states.canadian_province_id,
+              canadian_cityid: propdata.canadian_cities.canadian_city_id,
+
+            }));
+          }
+
+
+
+
+
+          console.log(formData, "cecece")
+
+
+        }
+        catch (error) {
+          console.error("Error fetching property data for edit:", error);
+        }
+
+
+      }
+      fetchPropertyDatatoEdit();
+
+    }
+
+
+  }, []);
+
+
+
+
+
+
+
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState(false);
 
@@ -131,7 +255,12 @@ export default function Step1Page() {
       if (response2.status === 200) {
         const data2 = response2.data;
         setownerDocPdfTypes(data2.data);
+
+
+
         console.log("Fetched owner ID document picture types:", data2.data);
+
+
       }
 
 
@@ -215,11 +344,11 @@ export default function Step1Page() {
           const response4 = await fetch(`${baseUrl}/auth/specificCityById/${userData.canadian_cityid}`);
           const data4 = await response4.json();
 
-          const provinceObj = data3?.province?.[0] || data3?.province; 
-          const cityObj = data4?.city?.[0] || data4?.city; 
+          const provinceObj = data3?.province?.[0] || data3?.province;
+          const cityObj = data4?.city?.[0] || data4?.city;
 
-          console.log("cityObj1",cityObj)
-           console.log("cityObj2",data4)
+          console.log("cityObj1", cityObj)
+          console.log("cityObj2", data4)
 
           setprofileAddress(prev => ({
             ...prev,
@@ -270,7 +399,7 @@ export default function Step1Page() {
 
     if (option === 1) {
       // Use profile address
-      console.log("profileAddress///",profileAddress)
+      console.log("profileAddress///", profileAddress)
 
 
       setFormData({
@@ -284,9 +413,10 @@ export default function Step1Page() {
         documentPreview: "",
         canadian_provinceid: profileAddress.province_id,
         canadian_cityid: profileAddress.city_id,
+        documentFileUrl: ""
       });
 
-    
+
 
 
     } else {
@@ -300,7 +430,8 @@ export default function Step1Page() {
         documentFile: null,
         documentPreview: "",
         canadian_provinceid: "",
-        canadian_cityid: ""
+        canadian_cityid: "",
+        documentFileUrl: ""
       });
     }
   };
@@ -385,106 +516,172 @@ export default function Step1Page() {
       formData.documentFile
     );
   };
-const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleNext = async () => {
-  if (isLoading) return; // double click prevent
+    if (isLoading) return; // double click prevent
 
-  console.log(formData);
+    console.log(formData);
 
-  if (selectedOption === 2) {
-    if (!validateForm()) return;
-  }
+    if (selectedOption === 2) {
+      if (!validateForm()) return;
+    }
 
-  setIsLoading(true);
+    setIsLoading(true);
 
-  try {
-    setLocation({
-      useProfileAddress: selectedOption === 1,
-      province:
-        selectedOption === 1 ? profileAddress.province : formData.province,
-      city: selectedOption === 1 ? profileAddress.city : formData.city,
-      street: selectedOption === 1 ? profileAddress.street : formData.street,
-      postalCode:
-        selectedOption === 1
-          ? profileAddress.postalCode
-          : formData.postalCode,
-      ownershipDocument:
-        selectedOption === 2 && formData.documentFile
-          ? {
+    try {
+      setLocation({
+        useProfileAddress: selectedOption === 1,
+        province:
+          selectedOption === 1 ? profileAddress.province : formData.province,
+        city: selectedOption === 1 ? profileAddress.city : formData.city,
+        street: selectedOption === 1 ? profileAddress.street : formData.street,
+        postalCode:
+          selectedOption === 1
+            ? profileAddress.postalCode
+            : formData.postalCode,
+        ownershipDocument:
+          selectedOption === 2 && formData.documentFile
+            ? {
               type: formData.documentType,
               file: formData.documentFile,
               preview: formData.documentPreview,
             }
-          : undefined,
-    });
+            : undefined,
+      });
 
-    const formDataToSend = new FormData();
 
-    formDataToSend.append("address", formData.street);
-    formDataToSend.append("postalcode", formData.postalCode);
-    formDataToSend.append("pdftypeid", formData.documentType);
-    formDataToSend.append("canadian_cityid", formData.canadian_cityid);
-    formDataToSend.append(
-      "canadian_provinceid",
-      formData.canadian_provinceid
-    );
-    formDataToSend.append(
-      "propertylocationid",
-      String(selectedOption ?? "")
-    );
 
-    if (formData.documentFile) {
-      formDataToSend.append("residentialdocpdf", formData.documentFile);
-    }
+      const formDataToSend = new FormData();
 
-    const response = await axios.post(
-      `${baseUrl}/ownerProperty/step1`,
-      formDataToSend,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        withCredentials: true,
+      formDataToSend.append("address", formData.street);
+      formDataToSend.append("propertyid", id ? id : "");
+      formDataToSend.append("postalcode", formData.postalCode);
+      formDataToSend.append("pdftypeid", formData.documentType);
+      if (selectedOption === 1) {
+        formDataToSend.append("canadian_cityid", profileAddress.city_id);
+        formDataToSend.append(
+          "canadian_provinceid",
+          profileAddress.province_id
+        );
       }
-    );
 
-    if (response.status === 200 || response.status === 201) {
-      nextStep();
 
-      router.push(
-        `/owner/add-property/step-2?address=${encodeURIComponent(
-          formData.street
-        )}&postalcode=${encodeURIComponent(
-          formData.postalCode
-        )}&propertyid=${encodeURIComponent(
-          response.data.data.propertyid
-        )}`
+
+      if(selectedOption ===2){
+      formDataToSend.append("canadian_cityid", formData.canadian_cityid);
+      formDataToSend.append(
+        "canadian_provinceid",
+        formData.canadian_provinceid
       );
     }
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const message =
-        (error.response as any)?.data?.message ??
-        error.message ??
-        "Submission failed. Please try again.";
 
-      seterrorMessage(message);
-      console.error("Submission error:", message);
-    } else {
-      console.error("Submission error:", error);
-      alert("Something went wrong. Please try again!");
+
+      formDataToSend.append(
+        "propertylocationid",
+        String(selectedOption ?? "")
+      );
+
+      if (formData.documentFile) {
+        formDataToSend.append("residentialdocpdf", formData.documentFile);
+      }
+
+      if (id && formData.documentFile) {
+
+        formDataToSend.append("residentialdocpdf", formData.documentFile);
+      }
+
+
+      if (id && !formData.documentFile) {
+        formDataToSend.append("prevpdfurl", formData.documentFileUrl);
+      }
+
+
+
+      const response = await axios.post(
+        `${baseUrl}/ownerProperty/step1`,
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        nextStep();
+
+        router.push(
+          `/owner/add-property/step-2?address=${encodeURIComponent(
+            formData.street
+          )}&postalcode=${encodeURIComponent(
+            formData.postalCode
+          )}&propertyid=${encodeURIComponent(
+            response.data.data.propertyid
+          )}`
+        );
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message =
+          (error.response as any)?.data?.message ??
+          error.message ??
+          "Submission failed. Please try again.";
+
+        seterrorMessage(message);
+        console.error("Submission error:", message);
+      } else {
+        console.error("Submission error:", error);
+        alert("Something went wrong. Please try again!");
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false); // 🔥 loader hamesha band
-  }
-};
+  };
 
 
   const handleSaveExit = () => {
     saveAsDraft();
     router.push("/owner");
   };
+
+  useEffect(() => {
+    if (
+      isEditingProperty &&
+      city_prov_doc_ids?.length > 0
+    ) {
+      const provinceId =
+        city_prov_doc_ids[0].canadian_province_id.toString();
+
+      const provinceName =
+        canadianProvinces.find(
+          p => String(p.canadian_province_id) === provinceId
+        )?.canadian_province_name || "";
+
+      setFormData(prev => ({
+        ...prev,
+        canadian_provinceid: provinceId,
+        province: provinceName,
+      }));
+    }
+  }, [isEditingProperty, city_prov_doc_ids, canadianProvinces]);
+
+
+
+  useEffect(() => {
+    if (
+      isEditingProperty &&
+      city_prov_doc_ids?.length > 0
+    ) {
+      setFormData(prev => ({
+        ...prev,
+        documentType:
+          city_prov_doc_ids[0]?.pdftypeid?.toString() || "",
+      }));
+    }
+  }, [isEditingProperty, city_prov_doc_ids]);
+
 
 
   return (
@@ -545,6 +742,8 @@ const [isLoading, setIsLoading] = useState(false);
                   : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                   }`}
                 data-testid="button-option-profile"
+                disabled={(isEditingProperty ? true : false)}
+
               >
                 <div className="flex items-start gap-4">
                   <div
@@ -581,6 +780,7 @@ const [isLoading, setIsLoading] = useState(false);
                   : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                   }`}
                 data-testid="button-option-new"
+                disabled={(isEditingProperty ? true : false)}
               >
                 <div className="flex items-start gap-4">
                   <div
@@ -649,17 +849,55 @@ const [isLoading, setIsLoading] = useState(false);
 
 
 
-                    <StyledSelect
-                      options={canadianProvinces.map((p) => ({
-                        value: String(p.canadian_province_id),
-                        label: p.canadian_province_name,
-                      }))}
-                      value={formData.canadian_provinceid}
+                    {/* <StyledSelect
+                      options={
+
+                        canadianProvinces.map((p) => ({
+
+
+                          value: String(p.canadian_province_id),
+                          label: p.canadian_province_name,
+
+
+                        }))
+
+
+                      }
+                      isDisabled={isEditingProperty ? true : false}
+
+                      // value={formData.canadian_provinceid}
+                      value={isEditingProperty ? city_prov_doc_ids[0]?.canadian_province_id.toString() : formData.canadian_provinceid}
+                      
                       onChange={(value) => {
                         // find the province name by selected id so province (used for cities lookup) remains the label
+
+                        // isEditingProperty ?
+                        //   setisEditingProperty(true);
+
+
+                        // setcity_prov_doc_ids([
+                        //   {
+                        //     canadian_province_id: propdata.canadian_province_id,
+                        //     canadian_city_id: propdata.canadian_city_id,
+                        //     pdftypeid: propdata.pdftypeid,
+                        //   }
+                        // ]);
+
+
+
+
+
+
+
+
+                        // :
+
+
                         const selectedProvince = canadianProvinces.find(
                           (p) => String(p.canadian_province_id) === value
                         )?.canadian_province_name || "";
+
+                        console.log("haa", selectedProvince)
 
                         setFormData({
                           ...formData,
@@ -681,7 +919,49 @@ const [isLoading, setIsLoading] = useState(false);
                       placeholder="Select province"
                       hasError={!!errors.province}
                       testId="select-province"
+                    /> */}
+
+                    <StyledSelect
+                      options={canadianProvinces.map(p => ({
+                        value: String(p.canadian_province_id),
+                        label: p.canadian_province_name,
+                      }))}
+
+
+
+                      isDisabled={isEditingProperty}
+
+                      value={
+                        isEditingProperty
+                          ? city_prov_doc_ids[0]?.canadian_province_id?.toString() || ""
+                          : formData.canadian_provinceid
+                      }
+
+                      onChange={(value: string) => {
+                        const selectedProvince =
+                          canadianProvinces.find(
+                            p => String(p.canadian_province_id) === value
+                          )?.canadian_province_name || "";
+
+                        setFormData(prev => ({
+                          ...prev,
+                          canadian_provinceid: value,
+                          province: selectedProvince,
+                          city: "",
+                        }));
+
+                        setErrors(prev => ({
+                          ...prev,
+                          province: value ? "" : "Province is required",
+                        }));
+                      }}
+
+
+                      placeholder="Select province"
+                      hasError={!!errors.province}
+                      testId="select-province"
                     />
+
 
                     {errors.province && (
                       <p
@@ -701,13 +981,27 @@ const [isLoading, setIsLoading] = useState(false);
                     >
                       City *
                     </label>
+
+
+
+
                     <StyledSelect
+
+
+
+
                       options={canadianCities.map((city) => ({
                         value: String(city.canadian_city_id),
                         label: city.canadian_city_name,
                       }))}
 
-                      value={formData.canadian_cityid}
+
+                      value={isEditingProperty ? city_prov_doc_ids[0]?.canadian_city_id.toString() : formData.canadian_cityid}
+
+
+                      // isDisabled={isEditingProperty ? true : false}
+
+
 
                       onChange={(value) => {
                         // find the province name by selected id so province (used for cities lookup) remains the label
@@ -722,6 +1016,8 @@ const [isLoading, setIsLoading] = useState(false);
                           canadian_cityid: value,
                         });
 
+
+
                         // Immediate validation
                         if (!value) {
                           setErrors({
@@ -734,7 +1030,9 @@ const [isLoading, setIsLoading] = useState(false);
                       }}
 
                       placeholder="Select city"
-                      isDisabled={!formData.province}
+                      isDisabled={!formData.province || isEditingProperty}
+
+
                       hasError={!!errors.city}
                       testId="select-city"
                     />
@@ -894,37 +1192,38 @@ const [isLoading, setIsLoading] = useState(false);
                     >
                       Document Type *
                     </label>
+
+
                     <StyledSelect
-                      options={ownerDocPdfTypes.map((type) => ({
+                      options={ownerDocPdfTypes.map(type => ({
                         value: String(type.pdftypeid),
                         label: type.pdftype,
                       }))}
+
                       value={formData.documentType}
 
+                      onChange={(value: string) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          documentType: value,
+                        }));
 
-
-
-
-
-
-
-                      onChange={(value) => {
-                        setFormData({ ...formData, documentType: value });
-
-                        // Immediate validation
-                        if (!value) {
-                          setErrors({
-                            ...errors,
-                            documentType: "Document type is required",
-                          });
-                        } else {
-                          setErrors({ ...errors, documentType: "" });
-                        }
+                        setErrors(prev => ({
+                          ...prev,
+                          documentType: value ? "" : "Document type is required",
+                        }));
                       }}
+
                       placeholder="Select document type"
                       hasError={!!errors.documentType}
                       testId="select-document-type"
                     />
+
+
+
+
+
+
                     {errors.documentType && (
                       <p
                         className="text-xs text-red-500"
@@ -992,28 +1291,80 @@ const [isLoading, setIsLoading] = useState(false);
                         </p>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex-1 flex items-center gap-3">
-                          <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <span className="text-red-600 text-xs font-bold">
-                              PDF
+
+
+
+
+                      isEditingProperty ?
+
+
+                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+
+
+                          <div className="flex-1 flex items-center gap-3">
+                            <a
+                              href={formData.documentFileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+
+                            >
+
+                              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span className="text-red-600 text-xs font-bold">
+                                  PDF
+                                </span>
+                              </div>
+                              <span
+                                className="text-sm text-gray-700 truncate"
+                                style={{ fontFamily: "Inter, sans-serif" }}
+                              >
+                                {formData.documentPreview}
+                              </span>
+
+
+                            </a>
+
+                          </div>
+
+
+
+                          <button
+                            onClick={removeDocument}
+                            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                            data-testid="button-remove-document"
+                          >
+                            <X className="w-5 h-5 text-gray-600" />
+                          </button>
+                        </div>
+
+
+
+                        :
+
+                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex-1 flex items-center gap-3">
+                            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <span className="text-red-600 text-xs font-bold">
+                                PDF
+                              </span>
+                            </div>
+                            <span
+                              className="text-sm text-gray-700 truncate"
+                              style={{ fontFamily: "Inter, sans-serif" }}
+                            >
+                              {formData.documentPreview}
                             </span>
                           </div>
-                          <span
-                            className="text-sm text-gray-700 truncate"
-                            style={{ fontFamily: "Inter, sans-serif" }}
+                          <button
+                            onClick={removeDocument}
+                            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                            data-testid="button-remove-document"
                           >
-                            {formData.documentPreview}
-                          </span>
+                            <X className="w-5 h-5 text-gray-600" />
+                          </button>
                         </div>
-                        <button
-                          onClick={removeDocument}
-                          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
-                          data-testid="button-remove-document"
-                        >
-                          <X className="w-5 h-5 text-gray-600" />
-                        </button>
-                      </div>
+
+
                     )}
 
                     {errors.document && (
@@ -1061,30 +1412,31 @@ const [isLoading, setIsLoading] = useState(false);
           >
             Save & Exit
           </button>
-<button
-  onClick={handleNext}
-  disabled={!canProceed() || isLoading}
-  className={`px-8 h-12 rounded-lg font-semibold transition-all flex items-center justify-center gap-2
-    ${
-      canProceed() && !isLoading
-        ? "bg-[#59A5B2] text-white hover:bg-[#4a8a95] shadow-md hover:shadow-lg"
-        : "bg-gray-200 text-gray-400 cursor-not-allowed"
-    }`}
-  style={{ fontFamily: "Inter, sans-serif" }}
-  data-testid="button-next"
->
-  {isLoading ? (
-    <>
-      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-      Proceeding...
-    </>
-  ) : (
-    "Next"
-  )}
-</button>
+          <button
+            onClick={handleNext}
+            disabled={!canProceed() || isLoading
+              || !formData.canadian_cityid || !formData.canadian_provinceid
+            }
+            className={`px-8 h-12 rounded-lg font-semibold transition-all flex items-center justify-center gap-2
+             ${canProceed() && !isLoading
+                ? "bg-[#59A5B2] text-white hover:bg-[#4a8a95] shadow-md hover:shadow-lg"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            style={{ fontFamily: "Inter, sans-serif" }}
+            data-testid="button-next"
+          >
+            {isLoading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Proceeding...
+              </>
+            ) : (
+              "Next"
+            )}
+          </button>
 
         </div>
       </div>
-    </div>
+    </div >
   );
 }

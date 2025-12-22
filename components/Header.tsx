@@ -159,7 +159,7 @@ export function Header() {
                     prefetch={false}
                     className="[font-family:'Poppins',Helvetica] font-medium text-[#59A5B2] text-[11px] leading-[30px] cursor-pointer w-full"
                   >
-                    Admin Panel
+                   Panel
                   </Link>
                 ) : roleId === 2 ? (
                   <Link
