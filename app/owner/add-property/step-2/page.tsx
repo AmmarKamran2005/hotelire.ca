@@ -83,6 +83,79 @@ export default function Step2Page() {
     }
   }
 
+  const photoKeyMap: Record<PhotoKey, string> = {
+    featured: "photo1_featured",
+    photo2: "photo2",
+    photo3: "photo3",
+    photo4: "photo4",
+    photo5: "photo5",
+  };
+
+
+  const getPropertyInformation = async (propertyid: any) => {
+
+    try {
+      const response = await axios.get(`${baseUrl}/ownerProperty/getProperties/${propertyid}`, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      });
+
+      if (response.data) {
+        const propertyData = response.data.property[0];
+        console.log("chk", propertyData);
+
+        setFormData(prev => ({
+          ...prev,
+          classification: propertyData.propertyclassification.propertyclassificationid,
+          title: propertyData.propertytitle ?? "",
+          subtitle: propertyData.propertysubtitle ?? "",
+          googleMapLink: propertyData.propertymaplink ?? "",
+        }));
+
+        // ---- PHOTO PREVIEWS (Cloudinary URLs) ----
+        const previews: { [key in PhotoKey]: string } = {} as any;
+        const files: { [key in PhotoKey]: File | string | null } = {} as any;
+
+        (Object.keys(photoLabels) as PhotoKey[]).forEach((key) => {
+          const backendKey = photoKeyMap[key];
+          const url = propertyData[backendKey];
+
+          previews[key] = url || "";
+          files[key] = url || null;
+        });
+
+        setPhotoPreviews(previews);
+        setPhotos(files);
+
+      }
+    } catch (ex) {
+
+      console.log("Error fetching property data:", ex);
+
+    }
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.google) {
@@ -108,6 +181,7 @@ export default function Step2Page() {
 
     fetchUser();
     fetchPropertyClassificationCategories();
+    getPropertyInformation(propertyid)
   }, []);
 
 
@@ -199,17 +273,27 @@ export default function Step2Page() {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      setPhotos({ ...photos, [key]: file });
-      setPhotoPreviews({ ...photoPreviews, [key]: e.target?.result as string });
-      setErrors({ ...errors, [key]: "" });
+      // setPhotos({ ...photos, [key]: file });
+      // setPhotoPreviews({ ...photoPreviews, [key]: e.target?.result as string });
+      // setErrors({ ...errors, [key]: "" });
+
+      setPhotos(prev => ({ ...prev, [key]: file }));
+      setPhotoPreviews(prev => ({ ...prev, [key]: e.target?.result as string }));
+      setErrors(prev => ({ ...prev, [key]: "" }));
     };
     reader.readAsDataURL(file);
   };
 
+  // const removePhoto = (key: PhotoKey) => {
+  //   setPhotos({ ...photos, [key]: null });
+  //   setPhotoPreviews({ ...photoPreviews, [key]: "" });
+  // };
+
   const removePhoto = (key: PhotoKey) => {
-    setPhotos({ ...photos, [key]: null });
-    setPhotoPreviews({ ...photoPreviews, [key]: "" });
+    setPhotos(prev => ({ ...prev, [key]: null }));
+    setPhotoPreviews(prev => ({ ...prev, [key]: "" }));
   };
+
 
   const validateGoogleMapsURL = (url: string): boolean => {
     try {
@@ -267,86 +351,86 @@ export default function Step2Page() {
       photos.featured
     );
   };
-const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
- const handleNext = async () => {
-  if (isLoading) return; // double click prevent
+  const handleNext = async () => {
+    if (isLoading) return; // double click prevent
 
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  if (!PropertyId) {
-    alert("User must first fill step 1 form! If already filled then retry it.");
-    return;
-  }
+    if (!PropertyId) {
+      alert("User must first fill step 1 form! If already filled then retry it.");
+      return;
+    }
 
-  setIsLoading(true);
+    setIsLoading(true);
 
-  try {
-    setDetails({
-      ...details,
-      googleMapLink: formData.googleMapLink.trim(),
-      photos,
-      photoPreviews,
-    });
+    try {
+      setDetails({
+        ...details,
+        googleMapLink: formData.googleMapLink.trim(),
+        photos,
+        photoPreviews,
+      });
 
-    const formDataToSend = new FormData();
+      const formDataToSend = new FormData();
 
-    formDataToSend.append("address", address);
-    formDataToSend.append("postalcode", postalcode);
-    formDataToSend.append("propertyid", PropertyId);
-    formDataToSend.append("propertytitle", formData.title);
-    formDataToSend.append("propertysubtitle", formData.subtitle);
-    formDataToSend.append("propertymaplink", formData.googleMapLink);
-    formDataToSend.append(
-      "propertyclassificationid",
-      String(formData.classification ?? "")
-    );
-
-    if (photos.featured) formDataToSend.append("photo1_featured", photos.featured);
-    if (photos.photo2) formDataToSend.append("photo2", photos.photo2);
-    if (photos.photo3) formDataToSend.append("photo3", photos.photo3);
-    if (photos.photo4) formDataToSend.append("photo4", photos.photo4);
-    if (photos.photo5) formDataToSend.append("photo5", photos.photo5);
-
-    const response = await axios.post(
-      `${baseUrl}/ownerProperty/step2`,
-      formDataToSend,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        withCredentials: true,
-      }
-    );
-
-    if (response.status === 200) {
-      nextStep();
-
-      router.push(
-        `/owner/add-property/step-3?address=${encodeURIComponent(
-          address
-        )}&postalcode=${encodeURIComponent(
-          postalcode
-        )}&propertyid=${encodeURIComponent(PropertyId)}`
+      formDataToSend.append("address", address);
+      formDataToSend.append("postalcode", postalcode);
+      formDataToSend.append("propertyid", PropertyId);
+      formDataToSend.append("propertytitle", formData.title);
+      formDataToSend.append("propertysubtitle", formData.subtitle);
+      formDataToSend.append("propertymaplink", formData.googleMapLink);
+      formDataToSend.append(
+        "propertyclassificationid",
+        String(formData.classification ?? "")
       );
-    }
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const message =
-        (error.response as any)?.data?.message ??
-        error.message ??
-        "Submission failed. Please try again.";
 
-      seterrorMessage(message);
-      console.error("Submission error:", message);
-    } else {
-      console.error("Submission error:", error);
-      alert("Something went wrong. Please try again!");
+      if (photos.featured) formDataToSend.append("photo1_featured", photos.featured);
+      if (photos.photo2) formDataToSend.append("photo2", photos.photo2);
+      if (photos.photo3) formDataToSend.append("photo3", photos.photo3);
+      if (photos.photo4) formDataToSend.append("photo4", photos.photo4);
+      if (photos.photo5) formDataToSend.append("photo5", photos.photo5);
+
+      const response = await axios.post(
+        `${baseUrl}/ownerProperty/step2`,
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.status === 200) {
+        nextStep();
+
+        router.push(
+          `/owner/add-property/step-3?address=${encodeURIComponent(
+            address
+          )}&postalcode=${encodeURIComponent(
+            postalcode
+          )}&propertyid=${encodeURIComponent(PropertyId)}`
+        );
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message =
+          (error.response as any)?.data?.message ??
+          error.message ??
+          "Submission failed. Please try again.";
+
+        seterrorMessage(message);
+        console.error("Submission error:", message);
+      } else {
+        console.error("Submission error:", error);
+        alert("Something went wrong. Please try again!");
+      }
+    } finally {
+      setIsLoading(false); // 🔥 always stop loader
     }
-  } finally {
-    setIsLoading(false); // 🔥 always stop loader
-  }
-};
+  };
 
 
   const handleBack = () => {
@@ -364,6 +448,9 @@ const [isLoading, setIsLoading] = useState(false);
     saveAsDraft();
     router.push("/owner");
   };
+
+
+
   return (
     <div className="w-full">
       {/* Top Bar */}
@@ -415,16 +502,46 @@ const [isLoading, setIsLoading] = useState(false);
                 >
                   Property Classification *
                 </label>
-                <StyledSelect
+
+
+
+
+                {/* <StyledSelect
                   options={classifications.map((type) => ({
                     value: String(type.propertyclassificationid),
                     label: type.propertyclassificationname,
                   }))}
                   value={formData.classification}
                   onChange={(value) => {
-                    setFormData({ ...formData, classification: value });
 
                   
+
+                    setFormData({ ...formData, classification: value });
+
+                    if (!value) {
+                      setErrors({ ...errors, classification: "Property classification is required" });
+                    } else {
+                      setErrors({ ...errors, classification: "" });
+                    }
+                  }}
+                  placeholder="Select classification"
+                  hasError={!!errors.classification}
+                  testId="select-classification"
+                /> */}
+
+
+                <StyledSelect
+                  options={classifications.map((type) => ({
+                    value: String(type.propertyclassificationid),
+                    label: type.propertyclassificationname,
+                  }))}
+                  value={formData.classification ? String(formData.classification) : ""}
+                  onChange={(value) => {
+                    setFormData({
+                      ...formData,
+                      classification: value,
+                    });
+
                     if (!value) {
                       setErrors({ ...errors, classification: "Property classification is required" });
                     } else {
@@ -435,6 +552,9 @@ const [isLoading, setIsLoading] = useState(false);
                   hasError={!!errors.classification}
                   testId="select-classification"
                 />
+
+
+
                 {errors.classification && (
                   <p className="text-xs text-red-500" style={{ fontFamily: 'Inter, sans-serif' }}>
                     {errors.classification}
@@ -457,7 +577,7 @@ const [isLoading, setIsLoading] = useState(false);
                     const value = e.target.value;
                     setFormData({ ...formData, title: value });
 
-                  
+
                     if (!value.trim()) {
                       setErrors({ ...errors, title: "Property title is required" });
                     } else {
@@ -506,8 +626,8 @@ const [isLoading, setIsLoading] = useState(false);
                     const value = e.target.value;
                     setFormData({ ...formData, subtitle: value });
 
-                   
-                    
+
+
                     if (!value.trim()) {
                       setErrors({ ...errors, subtitle: "Property subtitle is required" });
                     } else {
@@ -549,7 +669,7 @@ const [isLoading, setIsLoading] = useState(false);
                     const value = e.target.value;
                     setFormData({ ...formData, propertyName: value });
 
-                   
+
                     if (!value.trim()) {
                       setErrors({ ...errors, propertyName: "Property name is required" });
                     } else {
@@ -590,7 +710,7 @@ const [isLoading, setIsLoading] = useState(false);
                     const value = e.target.value;
                     setFormData({ ...formData, googleMapLink: value });
 
-                  
+
                     handlePlaceSearch(value);
                   }}
                   placeholder="Search for a location..."
@@ -703,6 +823,10 @@ const [isLoading, setIsLoading] = useState(false);
                     </div>
                   ))}
                 </div>
+
+
+
+
               </div>
             </div>
           </div>
@@ -775,27 +899,26 @@ const [isLoading, setIsLoading] = useState(false);
               Save & Exit
             </button>
 
-<button
-  onClick={handleNext}
-  disabled={!canProceed() || isLoading}
-  className={`px-8 h-12 rounded-lg font-semibold transition-all flex items-center justify-center gap-2
-    ${
-      canProceed() && !isLoading
-        ? "bg-[#59A5B2] text-white hover:bg-[#4a8a95] shadow-md hover:shadow-lg"
-        : "bg-gray-200 text-gray-400 cursor-not-allowed"
-    }`}
-  style={{ fontFamily: "Inter, sans-serif" }}
-  data-testid="button-next"
->
-  {isLoading ? (
-    <>
-      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-      Proceeding...
-    </>
-  ) : (
-    "Next"
-  )}
-</button>
+            <button
+              onClick={handleNext}
+              disabled={!canProceed() || isLoading}
+              className={`px-8 h-12 rounded-lg font-semibold transition-all flex items-center justify-center gap-2
+    ${canProceed() && !isLoading
+                  ? "bg-[#59A5B2] text-white hover:bg-[#4a8a95] shadow-md hover:shadow-lg"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
+              style={{ fontFamily: "Inter, sans-serif" }}
+              data-testid="button-next"
+            >
+              {isLoading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Proceeding...
+                </>
+              ) : (
+                "Next"
+              )}
+            </button>
           </div>
         </div>
       </div>

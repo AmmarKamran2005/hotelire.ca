@@ -180,74 +180,50 @@ export default function PropertyDetailPage() {
         {/* Header Section */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            {isEditing ? (
-              <div className="flex-1 space-y-3">
-                <input
-                  type="text"
-                  value={editData.title}
-                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                  className="w-full text-2xl font-bold bg-transparent border-b border-gray-300 dark:border-gray-600 focus:border-[#59A5B2] focus:outline-none text-gray-800 dark:text-white pb-1"
-                />
-                <input
-                  type="text"
-                  value={editData.subtitle}
-                  onChange={(e) => setEditData({ ...editData, subtitle: e.target.value })}
-                  className="w-full text-gray-500 dark:text-gray-400 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:border-[#59A5B2] focus:outline-none pb-1"
-                />
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={editData.city}
-                    onChange={(e) => setEditData({ ...editData, city: e.target.value })}
-                    className="flex-1 text-gray-600 dark:text-gray-300 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:border-[#59A5B2] focus:outline-none pb-1"
-                    placeholder="City"
-                  />
-                  <input
-                    type="text"
-                    value={editData.state}
-                    onChange={(e) => setEditData({ ...editData, state: e.target.value })}
-                    className="flex-1 text-gray-600 dark:text-gray-300 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:border-[#59A5B2] focus:outline-none pb-1"
-                    placeholder="State"
-                  />
+
+            <div>
+              <h1
+                className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white"
+                style={{ fontFamily: "Poppins, sans-serif" }}
+              >
+                {editData.title}
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">{editData.subtitle}</p>
+              <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                  <FontAwesomeIcon icon={faLocationDot} className="w-4 h-4 text-[#59A5B2]" />
+                  <span>{editData.city}, {editData.state}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faStar} className="w-4 h-4 text-[#FEBC11]" />
+                  <span className="font-medium text-gray-800 dark:text-white">
+                    {propertyData.rating}
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    ({propertyData.reviews} reviews)
+                  </span>
                 </div>
               </div>
-            ) : (
-              <div>
-                <h1
-                  className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white"
-                  style={{ fontFamily: "Poppins, sans-serif" }}
-                >
-                  {editData.title}
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">{editData.subtitle}</p>
-                <div className="flex items-center gap-4 mt-2">
-                  <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                    <FontAwesomeIcon icon={faLocationDot} className="w-4 h-4 text-[#59A5B2]" />
-                    <span>{editData.city}, {editData.state}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <FontAwesomeIcon icon={faStar} className="w-4 h-4 text-[#FEBC11]" />
-                    <span className="font-medium text-gray-800 dark:text-white">
-                      {propertyData.rating}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400">
-                      ({propertyData.reviews} reviews)
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-colors ${isEditing
+            </div>
+
+
+
+            <Link href={`/owner/add-property/step-1?id=${propertyId}`}>
+              <button
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-colors ${isEditing
                   ? "bg-green-500 hover:bg-green-600 text-white"
                   : "bg-[#59A5B2] hover:bg-[#4a9199] text-white"
-                }`}
-              data-testid="edit-property-button"
-            >
-              <FontAwesomeIcon icon={isEditing ? faCheck : faPencil} className="w-4 h-4" />
-              {isEditing ? "Save Changes" : "Edit Property"}
-            </button>
+                  }`}
+                data-testid="edit-property-button"
+              >
+
+                <FontAwesomeIcon icon={faPencil} className="w-4 h-4" />
+                {"Edit Property"}
+              </button>
+            </Link>
+
+
+
           </div>
         </div>
 
@@ -285,8 +261,8 @@ export default function PropertyDetailPage() {
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
                   className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden transition-all ${currentImageIndex === index
-                      ? "ring-2 ring-[#59A5B2] ring-offset-2"
-                      : "opacity-60 hover:opacity-100"
+                    ? "ring-2 ring-[#59A5B2] ring-offset-2"
+                    : "opacity-60 hover:opacity-100"
                     }`}
                 >
                   <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
@@ -443,8 +419,8 @@ export default function PropertyDetailPage() {
                         <button
                           onClick={() => toggleRoomStatus(room.id)}
                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${room.enabled
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                             }`}
                           data-testid={`toggle-room-${room.id}`}
                         >
