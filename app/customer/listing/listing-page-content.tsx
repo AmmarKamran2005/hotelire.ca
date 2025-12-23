@@ -377,7 +377,7 @@ export function ListingPageContent() {
     }
 
     const queryString = params.toString();
-    const newURL = queryString ? `/listing?${queryString}` : "/listing";
+    const newURL = queryString ? `/customer/listing?${queryString}` : "/customer/listing";
     router.push(newURL, { scroll: false });
   }, [
     selectedTypes,
