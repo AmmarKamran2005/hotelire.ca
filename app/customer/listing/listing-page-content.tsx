@@ -566,7 +566,7 @@ export function ListingPageContent() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="[font-family:'Poppins',Helvetica] font-bold text-[#59a5b2] text-xl md:text-2xl mb-2">
-                Hotels in Ontario
+                Hotels in Canada
               </h1>
               <p className="[font-family:'Inter',Helvetica] font-medium text-gray-600 text-sm md:text-base">
                 {filteredAndSortedListings.length} properties found
