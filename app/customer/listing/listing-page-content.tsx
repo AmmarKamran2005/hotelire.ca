@@ -543,6 +543,7 @@ export function ListingPageContent() {
 
   return (
     <section className="flex-1 w-full px-4 md:px-8 lg:px-[203px] py-6 md:py-8">
+        <div className="site-container">
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Desktop Filter Sidebar */}
         <aside className="hidden lg:block w-[280px] flex-shrink-0">
@@ -566,7 +567,7 @@ export function ListingPageContent() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="[font-family:'Poppins',Helvetica] font-bold text-[#59a5b2] text-xl md:text-2xl mb-2">
-                Hotels in Canada
+                Places in Canada
               </h1>
               <p className="[font-family:'Inter',Helvetica] font-medium text-gray-600 text-sm md:text-base">
                 {filteredAndSortedListings.length} properties found
@@ -691,6 +692,7 @@ export function ListingPageContent() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </section>
   );
