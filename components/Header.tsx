@@ -167,7 +167,7 @@ export function Header() {
                     prefetch={false}
                     className="[font-family:'Poppins',Helvetica] font-medium text-[#59A5B2] text-[11px] leading-[30px] cursor-pointer w-full"
                   >
-                    Owner Panel
+                  Panel
                   </Link>
                 ) : null}
               </DropdownMenuItem>
