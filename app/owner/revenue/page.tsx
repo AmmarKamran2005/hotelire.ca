@@ -263,8 +263,8 @@ export default function RevenuePage() {
                     borderRadius: "8px",
                     color: "#fff",
                   }}
-                  formatter={(value?: number) => [
-                    `$${(value ?? 0).toLocaleString()}`,
+                  formatter={(value) => [
+                    `$${(typeof value === 'number' ? value : 0).toLocaleString()}`,
                     "Revenue"
                   ]}
 
