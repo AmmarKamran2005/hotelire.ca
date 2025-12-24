@@ -342,39 +342,84 @@ export default function HotelDetailPage({ id }: { id: string }) {
       0
     );
   };
+//ustaad ka code
+//   const handleReserve = () => {
+//     if (!checkInDate || !checkOutDate || cart.length === 0) {
+//       setShowValidation(true);
+//       return;
+//     }
+//     setShowValidation(false);
 
-  const handleReserve = () => {
-    if (!checkInDate || !checkOutDate || cart.length === 0) {
-      setShowValidation(true);
-      return;
-    }
-    setShowValidation(false);
+//     const nights = calculateNights();
 
-    const nights = calculateNights();
+//     const reservationPayload = {
+//       propertyid: propertyDetail?.propertyid ?? null,
+//       checkInDate: checkInDate?.toISOString() ?? null,
+//       checkOutDate: checkOutDate?.toISOString() ?? null,
+//       nights,
+//       adults,
+//       children,
+//       totalAmount: calculateTotal(),
+//       rooms: cart.map((c) => ({
+//         propertyroomid: c.propertyroomid,
+//         roomname: c.roomname,
+//         roomtypename: c.roomtypename,
+//         quantity: c.quantity,
+//         pricePerNight: c.pricePerNight,
+//         totalForThisRoom: c.quantity * c.pricePerNight * nights,
+//       })),
+//     };
 
-    const reservationPayload = {
-      propertyid: propertyDetail?.propertyid ?? null,
-      checkInDate: checkInDate?.toISOString() ?? null,
-      checkOutDate: checkOutDate?.toISOString() ?? null,
+//     console.log("Reservation submitted:", reservationPayload);
+
+//     // You can replace the alert below with your API call to submit reservationPayload
+// router.push(`/customer/hotel/${propertyDetail?.propertyid}/summary`);
+//   };
+
+//handle reserve function updated by gpt
+const handleReserve = () => {
+  if (!checkInDate || !checkOutDate || cart.length === 0) {
+    setShowValidation(true);
+    return;
+  }
+
+  const nights = calculateNights();
+
+  const summaryPayload = {
+    property: {
+      id: propertyDetail?.propertyid,
+      name: propertyDetail?.propertytitle,
+      location: `${propertyDetail?.canadian_city_name}, ${propertyDetail?.canadian_province_name}`,
+      image: propertyDetail?.photo1_featured,
+    },
+    dates: {
+      checkIn: checkInDate.toISOString(),
+      checkOut: checkOutDate.toISOString(),
       nights,
+    },
+    guests: {
       adults,
       children,
-      totalAmount: calculateTotal(),
-      rooms: cart.map((c) => ({
-        propertyroomid: c.propertyroomid,
-        roomname: c.roomname,
-        roomtypename: c.roomtypename,
-        quantity: c.quantity,
-        pricePerNight: c.pricePerNight,
-        totalForThisRoom: c.quantity * c.pricePerNight * nights,
-      })),
-    };
-
-    console.log("Reservation submitted:", reservationPayload);
-
-    // You can replace the alert below with your API call to submit reservationPayload
-    alert("Reservation submitted successfully! Check console for payload.");
+    },
+    rooms: cart.map((c) => ({
+      id: c.propertyroomid,
+      name: c.roomname,
+      quantity: c.quantity,
+      pricePerNight: c.pricePerNight,
+      total: c.quantity * c.pricePerNight * nights,
+    })),
+    pricing: {
+      subtotal: calculateTotal(),
+      taxes: Math.round(calculateTotal() * 0.13), // example HST
+      total: Math.round(calculateTotal() * 1.13),
+    },
   };
+
+  localStorage.setItem("booking_summary", JSON.stringify(summaryPayload));
+
+  router.push(`/customer/hotel/${propertyDetail?.propertyid}/summary`);
+};
+
 
   function getIcon(iconName: string): IconDefinition | undefined {
     const icon = (Icons as any)[iconName as keyof typeof Icons];
