@@ -50,6 +50,23 @@ interface UserCity {
   canadian_province_id: number;
 }
 
+
+
+
+interface Step1FormData {
+  province: string;
+  city: string;
+  street: string;
+  postalCode: string;
+  documentType: string;
+  documentFile: File | null;
+  documentFileUrl: string;
+  documentPreview: string;
+  canadian_provinceid: string;
+  canadian_cityid: string;
+}
+
+
 export default function Step1Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,18 +105,36 @@ export default function Step1Page() {
 
 
 
-  const [formData, setFormData] = useState({
-    province: location.province,
-    city: location.city,
-    street: location.street,
-    postalCode: location.postalCode,
-    documentType: location.ownershipDocument?.type || "",
-    documentFile: location.ownershipDocument?.file || null,
-    documentFileUrl: "",
-    documentPreview: location.ownershipDocument?.preview || "",
-    canadian_provinceid: "",
-    canadian_cityid: "",
-  });
+  // const [formData, setFormData] = useState({
+  //   province: location.province,
+  //   city: location.city,
+  //   street: location.street,
+  //   postalCode: location.postalCode,
+  //   documentType: location.ownershipDocument?.type || "",
+  //   // documentFile: location.ownershipDocument?.file || null,
+  //   // documentFileUrl: "",
+  //   // documentPreview: location.ownershipDocument?.preview || "",
+  //    documentFile: File | null;          // ONLY new uploaded file
+  //   documentFileUrl: "",          // existing pdf url
+  //   documentPreview: "",          // filename for UI
+
+  //   canadian_provinceid: "",
+  //   canadian_cityid: "",
+  // });
+
+
+  const [formData, setFormData] = useState<Step1FormData>({
+  province: location.province || "",
+  city: location.city || "",
+  street: location.street || "",
+  postalCode: location.postalCode || "",
+  documentType: "",
+  documentFile: null,
+  documentFileUrl: "",
+  documentPreview: "",
+  canadian_provinceid: "",
+  canadian_cityid: "",
+});
 
 
   interface someIdsforEditCase {
@@ -138,15 +173,15 @@ export default function Step1Page() {
             ]);
           }
 
-          if (propdata.propertylocationid === 2) {
-            setcity_prov_doc_ids([
-              {
-                canadian_province_id: Number(profileAddress.province_id),
-                canadian_city_id: Number(profileAddress.city_id),
-                pdftypeid: propdata.pdftypeid,
-              }
-            ]);
-          }
+          // if (propdata.propertylocationid === 2) {
+          //   setcity_prov_doc_ids([
+          //     {
+          //       canadian_province_id: Number(profileAddress.province_id),
+          //       canadian_city_id: Number(profileAddress.city_id),
+          //       pdftypeid: propdata.pdftypeid,
+          //     }
+          //   ]);
+          // }
 
 
 
@@ -161,9 +196,17 @@ export default function Step1Page() {
               ...prev,
               postalCode: propdata.postalcode,
               street: propdata.address,
-              documentFile: propdata.residentialdocpdf,
-              documentType: propdata.pdftypeid,
+              // documentFile: propdata.residentialdocpdf,
+              // documentType: propdata.pdftypeid,
+              // documentFileUrl: propdata.residentialdocpdf || "",
+
+              documentFile: null,
               documentFileUrl: propdata.residentialdocpdf || "",
+              documentPreview: propdata.residentialdocpdf
+                ? propdata.residentialdocpdf.split("/").pop()
+                : "",
+
+
               city: propdata.canadian_cities.canadian_city_name,
               province: propdata.canadian_states.canadian_province_name,
               canadian_provinceid: propdata.canadian_states.canadian_province_id,
@@ -178,9 +221,18 @@ export default function Step1Page() {
               ...prev,
               postalCode: propdata.postalcode,
               street: propdata.address,
-              documentFile: propdata.residentialdocpdf,
-              documentType: propdata.pdftypeid,
+              // documentFile: propdata.residentialdocpdf,
+              // documentType: propdata.pdftypeid,
+              // documentFileUrl: propdata.residentialdocpdf || "",
+
+              documentFile: null,
               documentFileUrl: propdata.residentialdocpdf || "",
+              documentPreview: propdata.residentialdocpdf
+                ? propdata.residentialdocpdf.split("/").pop()
+                : "",
+
+
+
               city: profileAddress.city_id,
               province: profileAddress.province_id,
               canadian_provinceid: propdata.canadian_states.canadian_province_id,
@@ -461,13 +513,23 @@ export default function Step1Page() {
     if (file) handleFileUpload(file);
   };
 
+  // const removeDocument = () => {
+  //   setFormData({
+  //     ...formData,
+  //     documentFile: null,
+  //     documentPreview: "",
+  //   });
+  // };
+
   const removeDocument = () => {
-    setFormData({
-      ...formData,
-      documentFile: null,
-      documentPreview: "",
-    });
-  };
+  setFormData(prev => ({
+    ...prev,
+    documentFile: null,
+    documentFileUrl: "",
+    documentPreview: "",
+  }));
+};
+
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -494,8 +556,11 @@ export default function Step1Page() {
 
     if (!formData.documentType)
       newErrors.documentType = "Document type is required";
-    if (!formData.documentFile)
+
+    
+    if (!formData.documentFile && !formData.documentFileUrl) {
       newErrors.document = "Ownership document is required";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -512,8 +577,9 @@ export default function Step1Page() {
       validateCanadianAddress(formData.street) &&
       formData.postalCode &&
       validateCanadianPostal(formData.postalCode) &&
-      formData.documentType &&
-      formData.documentFile
+      formData.documentType 
+      &&
+      (formData.documentFile || formData.documentFileUrl)
     );
   };
   const [isLoading, setIsLoading] = useState(false);
@@ -568,13 +634,13 @@ export default function Step1Page() {
 
 
 
-      if(selectedOption ===2){
-      formDataToSend.append("canadian_cityid", formData.canadian_cityid);
-      formDataToSend.append(
-        "canadian_provinceid",
-        formData.canadian_provinceid
-      );
-    }
+      if (selectedOption === 2) {
+        formDataToSend.append("canadian_cityid", formData.canadian_cityid);
+        formDataToSend.append(
+          "canadian_provinceid",
+          formData.canadian_provinceid
+        );
+      }
 
 
       formDataToSend.append(
@@ -582,14 +648,15 @@ export default function Step1Page() {
         String(selectedOption ?? "")
       );
 
+      console.log(formData.documentFile, "see")
+
       if (formData.documentFile) {
         formDataToSend.append("residentialdocpdf", formData.documentFile);
       }
 
-      if (id && formData.documentFile) {
-
-        formDataToSend.append("residentialdocpdf", formData.documentFile);
-      }
+      // if (id && formData.documentFile) {
+      //   formDataToSend.append("residentialdocpdf", formData.documentFile);
+      // }
 
 
       if (id && !formData.documentFile) {
@@ -597,6 +664,10 @@ export default function Step1Page() {
       }
 
 
+
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(key, ":", value);
+      }
 
       const response = await axios.post(
         `${baseUrl}/ownerProperty/step1`,
@@ -1243,7 +1314,10 @@ export default function Step1Page() {
                       Upload Document (PDF, Max 3MB) *
                     </label>
 
-                    {!formData.documentFile ? (
+                    {/* {!formData.documentFile ? ( */}
+
+                    {!formData.documentFile && !formData.documentFileUrl ? (
+
                       <div
                         onDrop={handleDrop}
                         onDragOver={(e) => {
@@ -1295,77 +1369,106 @@ export default function Step1Page() {
 
 
 
-                      isEditingProperty ?
+                      // isEditingProperty ?
 
 
-                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      //   <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
 
 
+                      //     <div className="flex-1 flex items-center gap-3">
+                      //       <a
+                      //         href={formData.documentFileUrl}
+                      //         target="_blank"
+                      //         rel="noopener noreferrer"
+
+                      //       >
+
+                      //         <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      //           <span className="text-red-600 text-xs font-bold">
+                      //             PDF
+                      //           </span>
+                      //         </div>
+                      //         <span
+                      //           className="text-sm text-gray-700 truncate"
+                      //           style={{ fontFamily: "Inter, sans-serif" }}
+                      //         >
+                      //           {formData.documentPreview}
+                      //         </span>
+
+
+                      //       </a>
+
+                      //     </div>
+
+
+
+                      //     <button
+                      //       onClick={removeDocument}
+                      //       className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                      //       data-testid="button-remove-document"
+                      //     >
+                      //       <X className="w-5 h-5 text-gray-600" />
+                      //     </button>
+                      //   </div>
+
+
+
+                      //   :
+
+                      //   <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      //     <div className="flex-1 flex items-center gap-3">
+                      //       <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      //         <span className="text-red-600 text-xs font-bold">
+                      //           PDF
+                      //         </span>
+                      //       </div>
+                      //       <span
+                      //         className="text-sm text-gray-700 truncate"
+                      //         style={{ fontFamily: "Inter, sans-serif" }}
+                      //       >
+                      //         {formData.documentPreview}
+                      //       </span>
+                      //     </div>
+                      //     <button
+                      //       onClick={removeDocument}
+                      //       className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                      //       data-testid="button-remove-document"
+                      //     >
+                      //       <X className="w-5 h-5 text-gray-600" />
+                      //     </button>
+                      //   </div>
+
+
+                      (formData.documentFile || formData.documentFileUrl) && (
+                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
                           <div className="flex-1 flex items-center gap-3">
                             <a
-                              href={formData.documentFileUrl}
+                              href={formData.documentFileUrl || "#"}
                               target="_blank"
                               rel="noopener noreferrer"
-
                             >
-
-                              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <span className="text-red-600 text-xs font-bold">
-                                  PDF
-                                </span>
+                              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                <span className="text-red-600 text-xs font-bold">PDF</span>
                               </div>
-                              <span
-                                className="text-sm text-gray-700 truncate"
-                                style={{ fontFamily: "Inter, sans-serif" }}
-                              >
-                                {formData.documentPreview}
-                              </span>
-
-
                             </a>
-
-                          </div>
-
-
-
-                          <button
-                            onClick={removeDocument}
-                            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
-                            data-testid="button-remove-document"
-                          >
-                            <X className="w-5 h-5 text-gray-600" />
-                          </button>
-                        </div>
-
-
-
-                        :
-
-                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <div className="flex-1 flex items-center gap-3">
-                            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <span className="text-red-600 text-xs font-bold">
-                                PDF
-                              </span>
-                            </div>
-                            <span
-                              className="text-sm text-gray-700 truncate"
-                              style={{ fontFamily: "Inter, sans-serif" }}
-                            >
+                            <span className="text-sm text-gray-700 truncate">
                               {formData.documentPreview}
                             </span>
                           </div>
+
                           <button
                             onClick={removeDocument}
-                            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
-                            data-testid="button-remove-document"
+                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200"
                           >
                             <X className="w-5 h-5 text-gray-600" />
                           </button>
                         </div>
+                      )
+                    )
+                  }
 
 
-                    )}
+              
 
                     {errors.document && (
                       <p

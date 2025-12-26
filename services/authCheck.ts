@@ -13,6 +13,6 @@ export const authCheck = async () => {
     }catch(ex){
       return null; 
     }
-    return null; // not authenticated
+    return null; //   not authenticated
   }
 };

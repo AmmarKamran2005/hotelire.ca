@@ -1,187 +1,263 @@
-"use client";
+"use client"
 
-import React, { useEffect, useState } from "react";
-import { Header } from "@/components/Header";
-import { Navigation } from "@/components/Navigation";
-import { Footer } from "@/components/Footer";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AlertCircle, MapPin, Calendar, Users } from "lucide-react";
-import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import router from "next/router";
+import type React from "react"
+import { useEffect, useState } from "react"
+import { Header } from "@/components/Header"
+import { Navigation } from "@/components/Navigation"
+import { Footer } from "@/components/Footer"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { AlertCircle, MapPin, Calendar, Users, X } from "lucide-react"
+import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js"
+import { useRouter } from "next/navigation"
+import { authCheck } from "@/services/authCheck"
+import axios from "axios"
 
 interface GuestInfo {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
 }
 
 interface BookingData {
   property: {
-    id: number;
-    name: string;
-    location: string;
-    image: string;
-  };
+    id: number
+    name: string
+    location: string
+    image: string
+  }
   dates: {
-    checkIn: string;
-    checkOut: string;
-    nights: number;
-  };
+    checkIn: string
+    checkOut: string
+    nights: number
+  }
   guests: {
-    adults: number;
-    children: number;
-  };
+    adults: number
+    children: number
+  }
   rooms: Array<{
-    id: number;
-    name: string;
-    quantity: number;
-    pricePerNight: number;
-    total: number;
-  }>;
+    id: number
+    name: string
+    quantity: number
+    pricePerNight: number
+    total: number
+  }>
   pricing: {
-    subtotal: number;
-    taxes: number;
-    total: number;
-  };
+    subtotal: number
+    taxes: number
+    total: number
+  }
 }
 
 interface FormErrors {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
 }
 
-export default function BookingSummaryPage() {
-  const [bookingData, setBookingData] = useState<BookingData | null>(null);
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ""
 
+export default function BookingSummaryPage() {
+  const router = useRouter()
+  const stripe = useStripe()
+  const elements = useElements()
+
+  const [bookingData, setBookingData] = useState<BookingData | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [guestInfo, setGuestInfo] = useState<GuestInfo>({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
-  });
+  })
 
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [showErrorModal, setShowErrorModal] = useState(false)
 
   const formatDate = (isoString: string) => {
-    const date = new Date(isoString);
+    const date = new Date(isoString)
     return date.toLocaleDateString("en-CA", {
       year: "numeric",
       month: "long",
       day: "numeric",
-    });
-  };
+    })
+  }
+
+  const getUser = async () => {
+    try {
+      const user = await authCheck()
+      if (user) {
+        setUserId(user.user.userid)
+        setGuestInfo((prev) => ({
+          ...prev,
+          firstName: user.user.firstname,
+          lastName: user.user.lastname,
+          email: user.user.email,
+          phone: user.user.phoneno,
+        }))
+      }
+    } catch (error) {
+      console.error("[v0] Auth check error:", error)
+    }
+  }
 
   useEffect(() => {
-    const raw = localStorage.getItem("booking_summary");
-    if (!raw) return;
+    getUser()
+  }, [])
 
-    setBookingData(JSON.parse(raw));
-  }, []);
+  useEffect(() => {
+    const raw = localStorage.getItem("booking_summary")
+    if (!raw) return
+    setBookingData(JSON.parse(raw))
+  }, [])
 
   if (!bookingData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-500">Loading booking summary...</p>
       </div>
-    );
+    )
   }
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: FormErrors = {}
 
-    if (!guestInfo.firstName.trim())
-      newErrors.firstName = "First name is required";
-    if (!guestInfo.lastName.trim())
-      newErrors.lastName = "Last name is required";
+    if (!guestInfo.firstName.trim()) newErrors.firstName = "First name is required"
+    if (!guestInfo.lastName.trim()) newErrors.lastName = "Last name is required"
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!guestInfo.email.trim()) newErrors.email = "Email is required";
-    else if (!emailRegex.test(guestInfo.email))
-      newErrors.email = "Invalid email";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!guestInfo.email.trim()) newErrors.email = "Email is required"
+    else if (!emailRegex.test(guestInfo.email)) newErrors.email = "Invalid email"
 
-    if (!guestInfo.phone.trim()) newErrors.phone = "Phone number is required";
+    if (!guestInfo.phone.trim()) newErrors.phone = "Phone number is required"
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setGuestInfo((prev) => ({ ...prev, [name]: value }));
+    const { name, value } = e.target
+    setGuestInfo((prev) => ({ ...prev, [name]: value }))
     if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    if (!validateForm()) return;
-    if (!stripe || !elements) return;
+    if (!validateForm()) return
+    if (!stripe || !elements || !userId) {
+      setPaymentError("Payment system not ready. Please refresh the page.")
+      setShowErrorModal(true)
+      return
+    }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
 
-    // 1️⃣ Create PaymentIntent
-    const res = await fetch("/api/stripe/create-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount: bookingData.pricing.total * 100, // cents
-      }),
-    });
+    try {
+      // Step 1: Create PaymentIntent
+      console.log("[v0] Creating payment intent...")
+      const intentRes = await fetch(`${baseUrl}/stripe/create-intent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: Math.round(bookingData.pricing.total), // cents
+        }),
+      })
 
-    const { clientSecret } = await res.json();
+      if (!intentRes.ok) {
+        const errorText = await intentRes.text();
+        console.error("Stripe API error:", errorText);
+        throw new Error("Failed to create payment intent");
+      }
 
-    // 2️⃣ Confirm card payment
-    const result = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: elements.getElement(CardElement)!,
-        billing_details: {
-          name: `${guestInfo.firstName} ${guestInfo.lastName}`,
-          email: guestInfo.email,
+      const { clientSecret } = await intentRes.json();
+      console.log("Stripe clientSecret received:", clientSecret);
+
+      // Step 2: Confirm card payment with Stripe
+      console.log("[v0] Confirming card payment...")
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement)!,
+          billing_details: {
+            name: `${guestInfo.firstName} ${guestInfo.lastName}`,
+            email: guestInfo.email,
+          },
         },
-      },
-    });
+      })
 
-    if (result.error) {
-      alert(result.error.message);
-      setIsSubmitting(false);
-      return;
+      if (result.error) {
+        console.log("[v0] Payment error:", result.error.message)
+        setPaymentError(result.error.message || "Payment failed. Please try again.")
+        setShowErrorModal(true)
+        setIsSubmitting(false)
+        return
+      }
+
+      if (result.paymentIntent?.status !== "succeeded") {
+        console.log("[v0] Payment not succeeded, status:", result.paymentIntent?.status)
+        setPaymentError("Payment was not completed. Please try again.")
+        setShowErrorModal(true)
+        setIsSubmitting(false)
+        return
+      }
+
+      // Step 3: Create booking in database after successful payment
+      console.log("[v0] Payment succeeded, creating booking...")
+      const bookingRes = await axios.post(`${baseUrl}/booking/create`, {
+        userId,
+        propertyId: bookingData.property.id,
+        checkInDate: bookingData.dates.checkIn,
+        checkOutDate: bookingData.dates.checkOut,
+        rooms: bookingData.rooms.map((room) => ({
+          roomId: room.id,
+          quantity: room.quantity,
+          pricePerNight: room.pricePerNight,
+        })),
+        totalAmount: bookingData.pricing.total,
+        paymentIntentId: result.paymentIntent.id,
+        guestFirstName: guestInfo.firstName,
+        guestLastName: guestInfo.lastName,
+        guestEmail: guestInfo.email,
+        guestPhone: guestInfo.phone,
+      })
+
+      if (bookingRes.status !== 201) throw new Error("Failed to create booking")
+
+      const { bookingId } = bookingRes.data
+      console.log("[v0] Booking created successfully:", bookingId)
+
+      // Clear localStorage after successful booking
+      localStorage.removeItem("booking_summary")
+
+      // Redirect to confirmation page
+      router.push(`/customer/hotel/${bookingData.property.id}/confirmation?bookingId=${bookingId}`)
+    } catch (error: any) {
+      console.error("[v0] Booking creation error:", error)
+      const errorMessage =
+        error.response?.data?.message || error.message || "An unexpected error occurred. Please try again."
+      setPaymentError(errorMessage)
+      setShowErrorModal(true)
+    } finally {
+      setIsSubmitting(false)
     }
-
-    if (result.paymentIntent?.status === "succeeded") {
-      console.log("PAYMENT SUCCESS");
-
-      // 🔐 TODO:
-      // Save booking to DB here
-
-      router.push(`/customer/hotel/${bookingData.property.id}/confirmation`);
-    }
-
-    setIsSubmitting(false);
-  };
+  }
 
   const isFormValid =
-    guestInfo.firstName &&
-    guestInfo.lastName &&
-    guestInfo.email &&
-    guestInfo.phone &&
-    Object.keys(errors).length === 0;
-  const stripe = useStripe();
-  const elements = useElements();
+    guestInfo.firstName && guestInfo.lastName && guestInfo.email && guestInfo.phone && Object.keys(errors).length === 0
 
   return (
     <div className="bg-gray-50 w-full flex flex-col min-h-screen">
       <Header />
       <Navigation />
 
-      {/* Main Content */}
       <div className="flex-1 w-full px-4 md:px-8 lg:px-[203px] py-8 md:py-12">
         <div className="mb-8">
           <h1
@@ -190,30 +266,21 @@ export default function BookingSummaryPage() {
           >
             Complete Your Booking
           </h1>
-          <p
-            className="text-gray-600 text-sm md:text-base"
-            style={{ fontFamily: "Inter, sans-serif" }}
-          >
+          <p className="text-gray-600 text-sm md:text-base" style={{ fontFamily: "Inter, sans-serif" }}>
             Review your details and finalize your reservation
           </p>
         </div>
 
-        {/* Main Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Form */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Guest Information Section */}
               <Card className="p-6 md:p-8">
-                <h2
-                  className="text-[20px] font-bold text-[#59A5B2] mb-6"
-                  style={{ fontFamily: "Poppins, sans-serif" }}
-                >
+                <h2 className="text-[20px] font-bold text-[#59A5B2] mb-6" style={{ fontFamily: "Poppins, sans-serif" }}>
                   Guest Information
                 </h2>
 
                 <div className="space-y-5">
-                  {/* First Name */}
                   <div>
                     <label
                       htmlFor="firstName"
@@ -229,12 +296,8 @@ export default function BookingSummaryPage() {
                       value={guestInfo.firstName}
                       onChange={handleInputChange}
                       placeholder="Enter your first name"
-                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${
-                        errors.firstName
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-300 bg-white"
-                      }`}
-                      data-testid="input-first-name"
+                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${errors.firstName ? "border-red-500 bg-red-50" : "border-gray-300 bg-white"
+                        }`}
                       style={{ fontFamily: "Inter, sans-serif" }}
                     />
                     {errors.firstName && (
@@ -245,7 +308,6 @@ export default function BookingSummaryPage() {
                     )}
                   </div>
 
-                  {/* Last Name */}
                   <div>
                     <label
                       htmlFor="lastName"
@@ -261,12 +323,8 @@ export default function BookingSummaryPage() {
                       value={guestInfo.lastName}
                       onChange={handleInputChange}
                       placeholder="Enter your last name"
-                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${
-                        errors.lastName
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-300 bg-white"
-                      }`}
-                      data-testid="input-last-name"
+                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${errors.lastName ? "border-red-500 bg-red-50" : "border-gray-300 bg-white"
+                        }`}
                       style={{ fontFamily: "Inter, sans-serif" }}
                     />
                     {errors.lastName && (
@@ -277,7 +335,6 @@ export default function BookingSummaryPage() {
                     )}
                   </div>
 
-                  {/* Email */}
                   <div>
                     <label
                       htmlFor="email"
@@ -293,12 +350,8 @@ export default function BookingSummaryPage() {
                       value={guestInfo.email}
                       onChange={handleInputChange}
                       placeholder="your.email@example.com"
-                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${
-                        errors.email
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-300 bg-white"
-                      }`}
-                      data-testid="input-email"
+                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300 bg-white"
+                        }`}
                       style={{ fontFamily: "Inter, sans-serif" }}
                     />
                     {errors.email && (
@@ -309,7 +362,6 @@ export default function BookingSummaryPage() {
                     )}
                   </div>
 
-                  {/* Phone Number */}
                   <div>
                     <label
                       htmlFor="phone"
@@ -325,12 +377,8 @@ export default function BookingSummaryPage() {
                       value={guestInfo.phone}
                       onChange={handleInputChange}
                       placeholder="+1 (555) 123-4567"
-                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${
-                        errors.phone
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-300 bg-white"
-                      }`}
-                      data-testid="input-phone"
+                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${errors.phone ? "border-red-500 bg-red-50" : "border-gray-300 bg-white"
+                        }`}
                       style={{ fontFamily: "Inter, sans-serif" }}
                     />
                     {errors.phone && (
@@ -343,7 +391,6 @@ export default function BookingSummaryPage() {
                 </div>
               </Card>
 
-              {/* Payment Section */}
               <Card className="p-6 md:p-8">
                 <div className="mb-6">
                   <h2
@@ -352,26 +399,19 @@ export default function BookingSummaryPage() {
                   >
                     Secure Payment
                   </h2>
-                  <p
-                    className="text-gray-600 text-sm"
-                    style={{ fontFamily: "Inter, sans-serif" }}
-                  >
+                  <p className="text-gray-600 text-sm" style={{ fontFamily: "Inter, sans-serif" }}>
                     Your card will only be used to guarantee your booking
                   </p>
                 </div>
 
-  {/* Card Brand Icons */}
-<div className="flex items-center gap-3 mb-6 text-gray-500 text-xs">
-  <span>We accept</span>
-  <img src="/cards/visa-svgrepo-com.svg" className="h-10" alt="Visa" />
-  <img src="/cards/mastercard-svgrepo-com.svg" className="h-10" alt="Mastercard" />
-  <img src="/cards/amex-svgrepo-com.svg" className="h-10" alt="Amex" />
-  <img src="/cards/discover-svgrepo-com.svg" className="h-10" alt="Discover" />
-</div>
+                <div className="flex items-center gap-3 mb-6 text-gray-500 text-xs">
+                  <span>We accept</span>
+                  <img src="/cards/visa-svgrepo-com.svg" className="h-10" alt="Visa" />
+                  <img src="/cards/mastercard-svgrepo-com.svg" className="h-10" alt="Mastercard" />
+                  <img src="/cards/amex-svgrepo-com.svg" className="h-10" alt="Amex" />
+                  <img src="/cards/discover-svgrepo-com.svg" className="h-10" alt="Discover" />
+                </div>
 
-
-
-                {/* Stripe Card Element */}
                 <div className="bg-white border border-gray-300 rounded-lg p-4 mb-4 focus-within:ring-2 focus-within:ring-[#59A5B2] transition-all">
                   <CardElement
                     options={{
@@ -392,7 +432,6 @@ export default function BookingSummaryPage() {
                   />
                 </div>
 
-                {/* Security Note */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                   <p
                     className="text-blue-900 text-sm flex items-center gap-2"
@@ -403,38 +442,29 @@ export default function BookingSummaryPage() {
                   </p>
                 </div>
 
-                {/* Confirm Payment Button */}
                 <Button
                   type="submit"
                   disabled={!stripe || !isFormValid || isSubmitting}
                   className="w-full bg-[#59A5B2] hover:bg-[#4a8f9a] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-all"
                 >
-                  {isSubmitting
-                    ? "Processing..."
-                    : `Confirm & Pay CAD ${bookingData.pricing.total}`}
+                  {isSubmitting ? "Processing..." : `Confirm & Pay CAD ${bookingData.pricing.total}`}
                 </Button>
               </Card>
             </form>
           </div>
 
-          {/* Right Column - Booking Summary (Sticky on Desktop) */}
           <div className="lg:col-span-1">
             <Card className="sticky top-4 overflow-hidden">
-              {/* Property Image */}
               <div className="h-48 bg-gray-200 overflow-hidden">
                 <img
-                  src={bookingData.property.image}
+                  src={bookingData.property.image || "/placeholder.svg"}
                   alt={bookingData.property.name}
                   className="w-full h-full object-cover"
                 />
               </div>
 
-              {/* Property Details */}
               <div className="p-6">
-                <h3
-                  className="text-[18px] font-bold text-[#59A5B2] mb-1"
-                  style={{ fontFamily: "Poppins, sans-serif" }}
-                >
+                <h3 className="text-[18px] font-bold text-[#59A5B2] mb-1" style={{ fontFamily: "Poppins, sans-serif" }}>
                   {bookingData.property.name}
                 </h3>
                 <p
@@ -445,25 +475,16 @@ export default function BookingSummaryPage() {
                   {bookingData.property.location}
                 </p>
 
-                {/* Divider */}
                 <div className="border-t border-gray-200 my-4"></div>
 
-                {/* Booking Details */}
                 <div className="space-y-3 mb-4">
-                  {/* Check-in / Check-out */}
                   <div className="flex items-start gap-3">
                     <Calendar className="w-5 h-5 text-[#59A5B2] flex-shrink-0 mt-0.5" />
                     <div>
-                      <p
-                        className="text-xs text-gray-500 font-medium"
-                        style={{ fontFamily: "Poppins, sans-serif" }}
-                      >
+                      <p className="text-xs text-gray-500 font-medium" style={{ fontFamily: "Poppins, sans-serif" }}>
                         Check-in
                       </p>
-                      <p
-                        className="text-sm font-semibold text-gray-900"
-                        style={{ fontFamily: "Inter, sans-serif" }}
-                      >
+                      <p className="text-sm font-semibold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
                         {formatDate(bookingData.dates.checkIn)}
                       </p>
                       <p
@@ -472,37 +493,23 @@ export default function BookingSummaryPage() {
                       >
                         Check-out
                       </p>
-                      <p
-                        className="text-sm font-semibold text-gray-900"
-                        style={{ fontFamily: "Inter, sans-serif" }}
-                      >
+                      <p className="text-sm font-semibold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
                         {formatDate(bookingData.dates.checkOut)}
                       </p>
                     </div>
                   </div>
 
-                  {/* Guests */}
                   <div className="flex items-start gap-3">
                     <Users className="w-5 h-5 text-[#59A5B2] flex-shrink-0 mt-0.5" />
                     <div>
-                      <p
-                        className="text-xs text-gray-500 font-medium"
-                        style={{ fontFamily: "Poppins, sans-serif" }}
-                      >
+                      <p className="text-xs text-gray-500 font-medium" style={{ fontFamily: "Poppins, sans-serif" }}>
                         Guests
                       </p>
-                      <p
-                        className="text-sm font-semibold text-gray-900"
-                        style={{ fontFamily: "Inter, sans-serif" }}
-                      >
-                        {bookingData.guests.adults}{" "}
-                        {bookingData.guests.adults === 1 ? "Adult" : "Adults"}
+                      <p className="text-sm font-semibold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
+                        {bookingData.guests.adults} {bookingData.guests.adults === 1 ? "Adult" : "Adults"}
                         {bookingData.guests.children > 0 && (
                           <>
-                            , {bookingData.guests.children}{" "}
-                            {bookingData.guests.children === 1
-                              ? "Child"
-                              : "Children"}
+                            , {bookingData.guests.children} {bookingData.guests.children === 1 ? "Child" : "Children"}
                           </>
                         )}
                       </p>
@@ -510,112 +517,97 @@ export default function BookingSummaryPage() {
                   </div>
                 </div>
 
-                {/* Divider */}
                 <div className="border-t border-gray-200 my-4"></div>
 
-                {/* Selected Rooms */}
                 <div className="mb-4">
-                  <p
-                    className="text-xs font-medium text-gray-500 mb-3"
-                    style={{ fontFamily: "Poppins, sans-serif" }}
-                  >
+                  <p className="text-xs font-medium text-gray-500 mb-3" style={{ fontFamily: "Poppins, sans-serif" }}>
                     ROOMS
                   </p>
                   <div className="space-y-2">
                     {bookingData.rooms.map((room) => (
-                      <div
-                        key={room.id}
-                        className="flex justify-between items-center"
-                      >
-                        <span
-                          className="text-sm text-gray-700"
-                          style={{ fontFamily: "Inter, sans-serif" }}
-                        >
-                          {room.quantity}x {room.name}
+                      <div key={room.id} className="flex justify-between text-sm">
+                        <span style={{ fontFamily: "Inter, sans-serif" }}>
+                          {room.name} x{room.quantity}
                         </span>
-                        <span
-                          className="text-sm font-semibold text-gray-900"
-                          style={{ fontFamily: "Inter, sans-serif" }}
-                        >
-                          CAD {room.total}
+                        <span className="font-semibold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
+                          CAD ${room.total}
                         </span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Divider */}
                 <div className="border-t border-gray-200 my-4"></div>
 
-                {/* Price Breakdown */}
                 <div className="space-y-2 mb-4">
-                  <div className="flex justify-between items-center">
-                    <span
-                      className="text-sm text-gray-700"
-                      style={{ fontFamily: "Inter, sans-serif" }}
-                    >
-                      {bookingData.dates.nights} night
-                      {bookingData.dates.nights !== 1 ? "s" : ""}
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span style={{ fontFamily: "Inter, sans-serif" }}>
+                      Subtotal ({bookingData.dates.nights} nights)
                     </span>
-                    <span
-                      className="text-sm font-semibold text-gray-900"
-                      style={{ fontFamily: "Inter, sans-serif" }}
-                    >
-                      CAD {bookingData.pricing.subtotal}
-                    </span>
+                    <span style={{ fontFamily: "Inter, sans-serif" }}>CAD ${bookingData.pricing.subtotal}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span
-                      className="text-sm text-gray-700"
-                      style={{ fontFamily: "Inter, sans-serif" }}
-                    >
-                      Taxes & Fees
-                    </span>
-                    <span
-                      className="text-sm font-semibold text-gray-900"
-                      style={{ fontFamily: "Inter, sans-serif" }}
-                    >
-                      CAD {bookingData.pricing.taxes}
-                    </span>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span style={{ fontFamily: "Inter, sans-serif" }}>Taxes</span>
+                    <span style={{ fontFamily: "Inter, sans-serif" }}>CAD ${bookingData.pricing.taxes}</span>
                   </div>
                 </div>
 
-                {/* Divider */}
                 <div className="border-t border-gray-200 my-4"></div>
 
-                {/* Total */}
-                <div className="bg-[#FEC328] rounded-lg p-4 mb-4">
-                  <div className="flex justify-between items-center">
-                    <span
-                      className="text-base font-bold text-gray-900"
-                      style={{ fontFamily: "Poppins, sans-serif" }}
-                    >
-                      Total
-                    </span>
-                    <span
-                      className="text-2xl font-bold text-[#59A5B2]"
-                      style={{ fontFamily: "Poppins, sans-serif" }}
-                    >
-                      CAD {bookingData.pricing.total}
-                    </span>
-                  </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+                    Total
+                  </span>
+                  <span className="text-2xl font-bold text-[#59A5B2]" style={{ fontFamily: "Poppins, sans-serif" }}>
+                    CAD ${bookingData.pricing.total}
+                  </span>
                 </div>
-
-                {/* Info */}
-                <p
-                  className="text-xs text-gray-500 text-center"
-                  style={{ fontFamily: "Inter, sans-serif" }}
-                >
-                  You won't be charged until you confirm
-                </p>
               </div>
             </Card>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
       <Footer />
+
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-white">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100">
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+                    Payment Failed
+                  </h3>
+                </div>
+                <button onClick={() => setShowErrorModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-gray-600 mb-6" style={{ fontFamily: "Inter, sans-serif" }}>
+                {paymentError || "Your payment could not be processed. Please check your card details and try again."}
+              </p>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-800 text-sm" style={{ fontFamily: "Inter, sans-serif" }}>
+                  No booking has been created for this transaction. Please try again.
+                </p>
+              </div>
+
+              <Button
+                onClick={() => setShowErrorModal(false)}
+                className="w-full bg-[#59A5B2] hover:bg-[#4a8f9a] text-white font-semibold py-2 rounded-lg"
+              >
+                Try Again
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
-  );
+  )
 }
