@@ -117,7 +117,7 @@ export default function BookingSummaryPage() {
           firstName: user.user.firstname,
           lastName: user.user.lastname,
           email: user.user.email,
-          phone: user.user.phoneno,
+          phone: user.user.phoneno?.replace(/^\+1/, ""),
         }));
       }
     } catch (error) {
@@ -205,6 +205,56 @@ export default function BookingSummaryPage() {
     }
   };
 
+
+
+  const handleUserUpdateInfo = async (e: any) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+    if (!userId) {
+      alert("User not logged in");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch(`${baseUrl}/auth/updateCustomerInfo`, {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          userid: userId,
+          firstname: guestInfo.firstName,
+          lastname: guestInfo.lastName,
+          email: guestInfo.email,
+          phoneno: guestInfo.phone,
+        }),
+      },
+      );
+
+      const data = await res.json();
+
+      getUser()
+
+      if (!res.ok) {
+        throw new Error(data.message || "Update failed");
+      }
+
+      alert("Guest information updated successfully ✅");
+    } catch (error) {
+      console.error(error);
+      alert("Oops! Some thing went wrong While updating you information");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -222,6 +272,7 @@ export default function BookingSummaryPage() {
       console.log("[v0] Creating payment intent...");
       const intentRes = await fetch(`${baseUrl}/stripe/create-intent`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: Math.round(bookingData.pricing.total), // cents
@@ -248,6 +299,8 @@ export default function BookingSummaryPage() {
           },
         },
       });
+
+      console.log("Showing the result", result);
 
       if (result.error) {
         console.log("[v0] Payment error:", result.error.message);
@@ -288,6 +341,10 @@ export default function BookingSummaryPage() {
         guestLastName: guestInfo.lastName,
         guestEmail: guestInfo.email,
         guestPhone: guestInfo.phone,
+        adults: bookingData.guests.adults,
+        children: bookingData.guests.children,
+      }, {
+        withCredentials: true
       });
 
       if (bookingRes.status !== 201)
@@ -315,6 +372,9 @@ export default function BookingSummaryPage() {
       setIsSubmitting(false);
     }
   };
+
+
+
 
   const isFormValid =
     guestInfo.firstName &&
@@ -346,7 +406,10 @@ export default function BookingSummaryPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="space-y-8">
+
+
+
+            <form onSubmit={handleUserUpdateInfo} className="space-y-8">
               {/* Guest Information Section */}
               <Card className="p-6 md:p-8">
                 <h2
@@ -372,11 +435,10 @@ export default function BookingSummaryPage() {
                       value={guestInfo.firstName}
                       onChange={handleInputChange}
                       placeholder="Enter your first name"
-                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${
-                        errors.firstName
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-300 bg-white"
-                      }`}
+                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${errors.firstName
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-300 bg-white"
+                        }`}
                       style={{ fontFamily: "Inter, sans-serif" }}
                     />
                     {errors.firstName && (
@@ -402,11 +464,10 @@ export default function BookingSummaryPage() {
                       value={guestInfo.lastName}
                       onChange={handleInputChange}
                       placeholder="Enter your last name"
-                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${
-                        errors.lastName
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-300 bg-white"
-                      }`}
+                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${errors.lastName
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-300 bg-white"
+                        }`}
                       style={{ fontFamily: "Inter, sans-serif" }}
                     />
                     {errors.lastName && (
@@ -429,14 +490,14 @@ export default function BookingSummaryPage() {
                       id="email"
                       name="email"
                       type="email"
+                      disabled={true}
                       value={guestInfo.email}
                       onChange={handleInputChange}
                       placeholder="your.email@example.com"
-                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${
-                        errors.email
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-300 bg-white"
-                      }`}
+                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${errors.email
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-300 bg-white"
+                        }`}
                       style={{ fontFamily: "Inter, sans-serif" }}
                     />
                     {errors.email && (
@@ -462,11 +523,10 @@ export default function BookingSummaryPage() {
                       value={guestInfo.phone}
                       onChange={handleInputChange}
                       placeholder="+1 (555) 123-4567"
-                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${
-                        errors.phone
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-300 bg-white"
-                      }`}
+                      className={`w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#59A5B2] focus:border-transparent transition-all ${errors.phone
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-300 bg-white"
+                        }`}
                       style={{ fontFamily: "Inter, sans-serif" }}
                     />
                     {errors.phone && (
@@ -484,7 +544,11 @@ export default function BookingSummaryPage() {
                     {isSubmitting ? "Updating..." : "Update Guest Information"}
                   </Button>
                 </div>
+                 
               </Card>
+             </form>
+
+           <form onSubmit={handleSubmit}>
 
               <Card className="p-6 md:p-8">
                 <div className="mb-6">
@@ -567,6 +631,8 @@ export default function BookingSummaryPage() {
                 </Button>
               </Card>
             </form>
+
+
           </div>
 
           <div className="lg:col-span-1">
