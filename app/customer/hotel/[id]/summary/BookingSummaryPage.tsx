@@ -277,7 +277,6 @@ export default function BookingSummaryPage() {
         body: JSON.stringify({
           amount: Math.round(bookingData.pricing.total), // cents
         }),
-
       });
 
       if (!intentRes.ok) {
@@ -850,4 +849,8 @@ export default function BookingSummaryPage() {
       )}
     </div>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> df114e109d2d1be3468042011983369f32fd9528

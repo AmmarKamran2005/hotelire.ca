@@ -19,6 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useRouter } from "next/navigation";
 
 const canadianCities = [
   "Toronto, Ontario",
@@ -184,10 +185,12 @@ export function SearchBar() {
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [isGuestsOpen, setIsGuestsOpen] = useState(false);
+  const router = useRouter();
+  const [showValidation, setShowValidation] = useState(false);
 
   const filteredCities = location
     ? canadianCities.filter((city) =>
-        city.toLowerCase().includes(location.toLowerCase()),
+        city.toLowerCase().includes(location.toLowerCase())
       )
     : [];
 
@@ -199,6 +202,25 @@ export function SearchBar() {
   const selectCity = (city: string) => {
     setLocation(city);
     setShowSuggestions(false);
+  };
+
+  const handleSearch = () => {
+    if (!location || !checkInDate || !checkOutDate) {
+      setShowValidation(true);
+      return;
+    }
+
+    setShowValidation(false);
+
+    const params = new URLSearchParams({
+      location,
+      checkIn: checkInDate.toISOString(),
+      checkOut: checkOutDate.toISOString(),
+      adults: adults.toString(),
+      children: children.toString(),
+    });
+
+    router.push(`/customer/hotels?${params.toString()}`);
   };
 
   return (
@@ -223,6 +245,12 @@ export function SearchBar() {
           className="[font-family:'Poppins',Helvetica] font-normal text-[#919191] text-[12px] md:text-[13px] border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[#919191] no-shadow"
           data-testid="input-location"
         />
+        {showValidation && !location && (
+          <span className="text-red-500 text-xs mt-1">
+            Please select a location
+          </span>
+        )}
+
         {showSuggestions && filteredCities.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#e5e5e5] rounded-md shadow-lg max-h-[300px] overflow-y-auto z-50">
             {filteredCities.slice(0, 10).map((city) => (
@@ -253,7 +281,10 @@ export function SearchBar() {
               data-testid="button-date-picker"
             >
               {checkInDate && checkOutDate
-                ? `${format(checkInDate, "MMM dd")} - ${format(checkOutDate, "MMM dd")}`
+                ? `${format(checkInDate, "MMM dd")} - ${format(
+                    checkOutDate,
+                    "MMM dd"
+                  )}`
                 : "Select dates"}
               <ChevronDownIcon
                 className="ml-auto w-3.5 h-2"
@@ -309,7 +340,13 @@ export function SearchBar() {
               data-testid="button-guests"
             >
               {adults + children > 0
-                ? `${adults} ${adults === 1 ? "adult" : "adults"}${children > 0 ? ` - ${children} ${children === 1 ? "child" : "children"}` : ""}`
+                ? `${adults} ${adults === 1 ? "adult" : "adults"}${
+                    children > 0
+                      ? ` - ${children} ${
+                          children === 1 ? "child" : "children"
+                        }`
+                      : ""
+                  }`
                 : "Add guests"}
               <ChevronDownIcon
                 className="ml-auto w-3.5 h-2"
@@ -406,11 +443,12 @@ export function SearchBar() {
       </div>
 
       {/* Search Button */}
-      <Button
-        className="w-full md:w-20 lg:w-24 h-[60px] md:h-[75px] bg-[#febc11] rounded-[0px_0px_4px_4px] md:rounded-[0px_4px_4px_0px] transition-all duration-200 hover:bg-[#febc11]/90 hover:shadow-lg"
-        aria-label="Search hotels"
-        data-testid="button-search"
-      >
+    <Button
+  onClick={handleSearch}
+  className="w-full md:w-20 lg:w-24 h-[60px] md:h-[75px] bg-[#febc11] rounded-[0px_0px_4px_4px] md:rounded-[0px_4px_4px_0px] transition-all duration-200 hover:bg-[#febc11]/90 hover:shadow-lg"
+  aria-label="Search hotels"
+  data-testid="button-search"
+>
         <Image
           src="/figmaAssets/group.png"
           alt=""

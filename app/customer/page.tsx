@@ -10,10 +10,12 @@ import { HotelCard } from "@/components/HotelCard";
 import { destinations, popularHotels} from "@/lib/data";
 // import { destinations, popularHotels, uniqueProperties } from "@/lib/data";
 import { Mbanner } from "@/components/Mbanner";
+import PendingReviewCards from "@/app/customer/review/components/PendingReviewCards";
 
-//ammar changing 
 
 export default function CustomerHomePage() {
+  // const user = useAuth(); // or useSession(), etc
+
   return (
     <div className="bg-white w-full flex flex-col">
       <Header />
@@ -50,7 +52,12 @@ export default function CustomerHomePage() {
         </div>
        
       </section>
-
+      {/* {user && <PendingReviewCards />} */}
+      <section className="bg-[#F3FAFB] py-10">
+      <PendingReviewCards />
+      
+      </section>
+   {/* idher review wala modal add krna hai ager user authenticated hua to, phir agr us ki booking confirmed ho to confirmed likh aye ga, agr stay complete hochuka ho tu leave a review ka option aye ga */}
       {/* Explore Canada */}
       <section className="w-full bg-[#e3fdff] py-12 md:py-16 lg:py-[81px] px-4 md:px-8 lg:px-[203px]">
         <div className="site-container">
