@@ -56,6 +56,7 @@ interface FormErrors {
 }
 
 export default function BookingSummaryPage() {
+  
   const [bookingData, setBookingData] = useState<BookingData | null>(null);
 
   const [guestInfo, setGuestInfo] = useState<GuestInfo>({
@@ -340,6 +341,21 @@ export default function BookingSummaryPage() {
                       </p>
                     )}
                   </div>
+                  {/* <button
+                    type="button"
+                    className="text-sm text-[#59A5B2] hover:underline"
+                  >
+                    Update Info
+                  </button> */}
+                  <Button
+                    type="submit"
+                  
+                    className="w-full bg-[#59A5B2] hover:bg-[#4a8f9a] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-all"
+                  >
+                    {isSubmitting
+                      ? "Processing..."
+                      : `Confirm & Pay CAD ${bookingData.pricing.total}`}
+                  </Button>
                 </div>
               </Card>
 
@@ -360,16 +376,30 @@ export default function BookingSummaryPage() {
                   </p>
                 </div>
 
-  {/* Card Brand Icons */}
-<div className="flex items-center gap-3 mb-6 text-gray-500 text-xs">
-  <span>We accept</span>
-  <img src="/cards/visa-svgrepo-com.svg" className="h-10" alt="Visa" />
-  <img src="/cards/mastercard-svgrepo-com.svg" className="h-10" alt="Mastercard" />
-  <img src="/cards/amex-svgrepo-com.svg" className="h-10" alt="Amex" />
-  <img src="/cards/discover-svgrepo-com.svg" className="h-10" alt="Discover" />
-</div>
-
-
+                {/* Card Brand Icons */}
+                <div className="flex items-center gap-3 mb-6 text-gray-500 text-xs">
+                  <span>We accept</span>
+                  <img
+                    src="/cards/visa-svgrepo-com.svg"
+                    className="h-10"
+                    alt="Visa"
+                  />
+                  <img
+                    src="/cards/mastercard-svgrepo-com.svg"
+                    className="h-10"
+                    alt="Mastercard"
+                  />
+                  <img
+                    src="/cards/amex-svgrepo-com.svg"
+                    className="h-10"
+                    alt="Amex"
+                  />
+                  <img
+                    src="/cards/discover-svgrepo-com.svg"
+                    className="h-10"
+                    alt="Discover"
+                  />
+                </div>
 
                 {/* Stripe Card Element */}
                 <div className="bg-white border border-gray-300 rounded-lg p-4 mb-4 focus-within:ring-2 focus-within:ring-[#59A5B2] transition-all">
