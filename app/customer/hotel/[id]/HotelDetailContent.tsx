@@ -430,8 +430,8 @@ const calculateTotal = () => {
   }
 
   return (
-    <div className="bg-white w-full flex flex-col min-h-screen">
-      <section className="w-full bg-[#F5F6FD] py-6 px-4 md:px-8 lg:px-[203px]">
+    <div className="bg-white w-full flex flex-col min-h-screen ">
+      <section className="w-full bg-[#F5F6FD] py-6 px-4 md:px-8 lg:px-[103px]">
         <div className="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex flex-col lg:flex-row gap-4 items-stretch">
             {/* Location */}
@@ -605,7 +605,7 @@ const calculateTotal = () => {
       </section>
 
       {/* Main Content Container */}
-      <div className="w-full px-4 md:px-8 lg:px-[203px] py-8">
+      <div className="w-full px-4 md:px-8 lg:px-[103px] py-8 site-container">
         {/* Hotel Title */}
         <h1
           className="text-[28px] md:text-[32px] font-bold text-[#59A5B2] mb-1"
@@ -780,7 +780,7 @@ const calculateTotal = () => {
 
                         {/* Col 2: Room Type + Guest Icons */}
                         <div className="col-span-1 md:col-span-3">
-                          <h1 className="font-semibold text-[#59A5B2] text-sm mb-2" style={{ fontFamily: "Poppins, sans-serif" }}>
+                          <h1 className="font-semibold text-[#59A5B2] text-xs text-center mb-2" style={{ fontFamily: "Poppins, sans-serif" }}>
                             {room.roomtypename}
                           </h1>
                           <div className="flex items-center gap-1 justify-center">
@@ -805,7 +805,7 @@ const calculateTotal = () => {
                           <span className="text-2xl font-bold text-[#59A5B2]" style={{ fontFamily: "Poppins, sans-serif" }}>
                             CAD {room.price}
                           </span>
-                          <span className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                          <span className="text-xs text-gray-500 text-center" style={{ fontFamily: "Inter, sans-serif" }}>
                             Includes taxes and charges
                           </span>
                         </div>
