@@ -1,45 +1,49 @@
-"use client";
+"use client"
 
-import { useDashboardStats } from "@/hooks/use-mock-data";
-import {
-  Users,
-  Building,
-  CalendarCheck,
-  TrendingUp,
-  DollarSign,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { useEffect, useState } from "react"
+import { Users, Building, CalendarCheck, TrendingUp, DollarSign } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
-/* Mock chart data */
-const chartData = [
-  { name: "Jan", revenue: 4000, bookings: 24 },
-  { name: "Feb", revenue: 3000, bookings: 18 },
-  { name: "Mar", revenue: 2000, bookings: 12 },
-  { name: "Apr", revenue: 2780, bookings: 20 },
-  { name: "May", revenue: 1890, bookings: 15 },
-  { name: "Jun", revenue: 2390, bookings: 22 },
-  { name: "Jul", revenue: 3490, bookings: 30 },
-  { name: "Aug", revenue: 4200, bookings: 35 },
-  { name: "Sep", revenue: 5100, bookings: 42 },
-  { name: "Oct", revenue: 6500, bookings: 55 },
-];
+interface DashboardStats {
+  totalOwners: number
+  totalProperties: number
+  totalBookings: number
+  totalRevenue: number
+  chartData: Array<{ date: string; revenue: number }>
+  quickStats: {
+    activeSubscriptions: number
+    bookingRate: number
+    satisfaction: string | number
+  }
+}
+
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 
 export default function DashboardPage() {
-  const { data: stats } = useDashboardStats();
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch(`${baseUrl}/admin/dashboard`)
+        const data = await response.json()
+        setStats(data)
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
+
+  if (loading || !stats) {
+    return <div className="p-8 text-center">Loading dashboard...</div>
+  }
 
   const statCards = [
     {
@@ -74,41 +78,35 @@ export default function DashboardPage() {
       color: "text-amber-500",
       bg: "bg-amber-500/10",
     },
-  ];
+  ]
 
   return (
     <>
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-display font-bold text-foreground">
-          Dashboard
-        </h1>
+        <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statCards.map((stat, i) => (
-          <Card
-            key={i}
-            className="border-border/50 shadow-sm hover:shadow-md transition-shadow"
-          >
+          <Card key={i} className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
-                  </p>
-                  <h3 className="text-2xl font-bold mt-2 font-display">
-                    {stat.value}
-                  </h3>
-                  <p className="text-xs font-medium text-emerald-600 mt-1 flex items-center gap-1">
+                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                  <h3 className="text-2xl font-bold mt-2 font-display">{stat.value}</h3>
+                  <p
+                    className={`text-xs font-medium mt-1 flex items-center gap-1 ${
+                      Number(stat.trend) >= 0 ? "text-emerald-600" : "text-red-600"
+                    }`}
+                  >
                     <TrendingUp className="h-3 w-3" />
-                    {stat.trend} from last month
+                    {Number(stat.trend) >= 0 ? "+" : ""}
+                    {stat.trend}% from last month
                   </p>
                 </div>
-                <div
-                  className={`h-12 w-12 rounded-xl flex items-center justify-center ${stat.bg}`}
-                >
+                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
                   <stat.icon className={`h-6 w-6 ${stat.color}`} />
                 </div>
               </div>
@@ -122,45 +120,20 @@ export default function DashboardPage() {
         {/* Revenue Chart */}
         <Card className="lg:col-span-2 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">
-              Revenue Overview
-            </CardTitle>
+            <CardTitle className="text-lg font-semibold">Revenue Overview</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
+                <AreaChart data={stats.chartData}>
                   <defs>
-                    <linearGradient
-                      id="colorRevenue"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="hsl(var(--primary))"
-                        stopOpacity={0.3}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="hsl(var(--primary))"
-                        stopOpacity={0}
-                      />
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#E2E8F0"
-                  />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#64748B", fontSize: 12 }}
-                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#64748B", fontSize: 12 }} />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
@@ -190,37 +163,35 @@ export default function DashboardPage() {
         {/* Quick Stats */}
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">
-              Quick Stats
-            </CardTitle>
+            <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <StatBar
               title="Active Subscriptions"
               subtitle="Premium Plan"
-              value="84%"
-              percent={84}
+              value={`${stats.quickStats.activeSubscriptions}%`}
+              percent={stats.quickStats.activeSubscriptions}
               color="bg-emerald-500"
             />
             <StatBar
               title="Booking Rate"
               subtitle="Avg. per property"
-              value="12.5"
-              percent={65}
+              value={stats.quickStats.bookingRate.toString()}
+              percent={Math.min(stats.quickStats.bookingRate * 10, 100)}
               color="bg-secondary"
             />
             <StatBar
               title="Customer Satisfaction"
               subtitle="Based on reviews"
-              value="4.8/5"
-              percent={96}
+              value={`${stats.quickStats.satisfaction}/5`}
+              percent={(Number.parseFloat(stats.quickStats.satisfaction.toString()) / 5) * 100}
               color="bg-primary"
             />
           </CardContent>
         </Card>
       </div>
     </>
-  );
+  )
 }
 
 /* Small helper component */
@@ -231,11 +202,11 @@ function StatBar({
   percent,
   color,
 }: {
-  title: string;
-  subtitle: string;
-  value: string;
-  percent: number;
-  color: string;
+  title: string
+  subtitle: string
+  value: string
+  percent: number
+  color: string
 }) {
   return (
     <div>
@@ -247,11 +218,8 @@ function StatBar({
         <span className="font-bold text-lg">{value}</span>
       </div>
       <div className="w-full bg-muted rounded-full h-2">
-        <div
-          className={`${color} h-2 rounded-full`}
-          style={{ width: `${percent}%` }}
-        />
+        <div className={`${color} h-2 rounded-full`} style={{ width: `${percent}%` }} />
       </div>
     </div>
-  );
+  )
 }

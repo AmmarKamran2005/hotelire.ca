@@ -45,7 +45,7 @@ export async function proxy(request: NextRequest) {
       }
 
       // 2️⃣ For all other /owner/* routes → require roleId = 2
-      if (roleId !== 2) {
+      if (roleId !== 2 ) {
         url.pathname = "/unauthorized";
         return NextResponse.redirect(url);
       }
