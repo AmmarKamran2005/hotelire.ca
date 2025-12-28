@@ -1,4 +1,4 @@
-import { Destination, Hotel, Listing,  } from "@/types";
+import { Destination, Hotel  } from "@/types";
 
 // This data will be replaced with API calls in production
 // For now, keeping as reference data that matches the design

@@ -388,7 +388,7 @@ export default function BookingSummaryPage() {
       <Header />
       <Navigation />
 
-      <div className="flex-1 w-full px-4 md:px-8 lg:px-[203px] py-8 md:py-12">
+      <div className="flex-1 w-full px-4 md:px-8 lg:px-[203px] py-8 md:py-12 site-container">
         <div className="mb-8">
           <h1
             className="text-[28px] md:text-[36px] font-bold text-[#59A5B2] mb-2"

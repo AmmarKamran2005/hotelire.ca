@@ -15,7 +15,12 @@ export function HotelCard({ hotel }: HotelCardProps) {
   const router = useRouter();   // ✅ Added
 
   return (
-    <Link href={`/hotels/${hotel.id}`} prefetch={false}>
+    <Link
+  href={`/customer/hotel/${hotel.id}`}
+  prefetch={false}
+  className="block w-full"
+>
+
       <Card className="overflow-hidden border border-gray-100 hover:shadow-[0px_8px_24px_rgba(63,44,119,0.1)] transition-all duration-300">
         <CardContent className="p-0 flex flex-col h-full">
           <div className="relative w-full h-[250px] md:h-[280px] lg:h-[308px] rounded-[5px] overflow-hidden">
@@ -33,7 +38,7 @@ export function HotelCard({ hotel }: HotelCardProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                router.push(`/hotels/${hotel.id}`); // Correct detail page URL
+                router.push(`/customer/hotel/${hotel.id}`); // Correct detail page URL
               }}
               aria-label="View details"
               data-testid={`button-view-${hotel.id}`}

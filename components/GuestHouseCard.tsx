@@ -12,7 +12,7 @@ interface GuestHouseCardProps {
 
 export function GuestHouseCard({ property }: GuestHouseCardProps) {
   return (
-    <Link href={`/properties/${property.id}`} prefetch={false}>
+    <Link href={`/customer/hotel/${property.id}`} prefetch={false}>
       <Card className="overflow-hidden border border-gray-100 hover:shadow-[0px_8px_24px_rgba(63,44,119,0.1)] transition-all duration-300">
         <CardContent className="p-0 flex flex-col h-full">
           <div className="relative w-full h-[250px] md:h-[280px] lg:h-[308px] rounded-[5px] overflow-hidden">
