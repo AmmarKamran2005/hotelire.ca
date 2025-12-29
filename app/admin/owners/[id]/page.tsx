@@ -1,16 +1,13 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useOwner, useProperties } from "@/hooks/use-mock-data";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { StatusBadge } from "../../components/StatusBadge";
+import type React from "react"
+
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatusBadge } from "../../components/StatusBadge"
 import {
   ArrowLeft,
   MapPin,
@@ -22,25 +19,76 @@ import {
   DollarSign,
   ExternalLink,
   ChevronRight,
-} from "lucide-react";
+} from "lucide-react"
+
+interface OwnerDetails {
+  id: number
+  fullName: string
+  email: string
+  phone: string
+  address: string
+  city: string
+  province: string
+  postalCode: string
+  profilePic: string
+  status: string
+  documents: {
+    idDocument: string | null
+    residentialDoc: string | null
+  }
+  subscriptionStatus: string
+  totalProperties: number
+  totalBookings: number
+  totalRevenue: number
+  properties: Array<{
+    id: number
+    title: string
+    subtitle: string
+    city: string
+    imageUrl: string
+    bookings: number
+    revenue: number
+    status: string
+  }>
+  subscriptions: Array<{
+    id: number
+    amount: number
+    currency: string
+    startDate: string
+    endDate: string
+    createdAt: string
+  }>
+}
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function OwnerProfilePage() {
-  const params = useParams();
-  const id = Number(params.id);
+  const params = useParams()
+  const id = Number(params.id)
+  const [owner, setOwner] = useState<OwnerDetails | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { data: owner } = useOwner(id);
-  const { data: allProperties } = useProperties();
+  useEffect(() => {
+    const fetchOwner = async () => {
+      try {
+        const response = await fetch(`${baseUrl}/admin/owners/${id}`)
+        const data = await response.json()
+        setOwner(data)
+      } catch (error) {
+        console.error("Error fetching owner:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const ownerProperties = allProperties.filter(
-    (p) => p.ownerId === id
-  );
+    fetchOwner()
+  }, [id])
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading owner details...</div>
+  }
 
   if (!owner) {
-    return (
-      <div className="p-8 text-center text-muted-foreground">
-        Owner not found
-      </div>
-    );
+    return <div className="p-8 text-center text-muted-foreground">Owner not found</div>
   }
 
   return (
@@ -48,10 +96,7 @@ export default function OwnerProfilePage() {
       {/* Back Button */}
       <div className="mb-6">
         <Link href="/admin/owners">
-          <Button
-            variant="ghost"
-            className="gap-2 pl-0 hover:bg-transparent hover:text-primary"
-          >
+          <Button variant="ghost" className="gap-2 pl-0 hover:bg-transparent hover:text-primary">
             <ArrowLeft className="h-4 w-4" />
             Back to Owners
           </Button>
@@ -66,31 +111,26 @@ export default function OwnerProfilePage() {
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold font-display">
-              {owner.fullName}
-            </h1>
+            <h1 className="text-2xl font-bold font-display">{owner.fullName}</h1>
 
             <div className="flex flex-wrap items-center gap-3 mt-1 text-muted-foreground">
               <span className="flex items-center gap-1.5 text-sm">
                 <Mail className="h-4 w-4" /> {owner.email}
               </span>
               <span className="flex items-center gap-1.5 text-sm">
-                <Phone className="h-4 w-4" /> {owner.mobile}
+                <Phone className="h-4 w-4" /> {owner.phone}
               </span>
             </div>
 
             <div className="flex gap-2 mt-4">
               <StatusBadge status={owner.status} />
-              <StatusBadge
-                status={owner.subscriptionStatus}
-                className="bg-blue-100 text-blue-700 border-blue-200"
-              />
+              <StatusBadge status={owner.subscriptionStatus} className="bg-blue-100 text-blue-700 border-blue-200" />
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-3">
-          <Button variant="outline">Edit Profile</Button>
+        <div className="flex mt-5 flex-col items-end gap-3">
+         
           <Button variant="destructive">Suspend Account</Button>
         </div>
       </div>
@@ -101,9 +141,7 @@ export default function OwnerProfilePage() {
           {/* Address */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">
-                Address Details
-              </CardTitle>
+              <CardTitle className="text-lg">Address Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-3">
@@ -113,9 +151,7 @@ export default function OwnerProfilePage() {
                   <p className="text-muted-foreground">
                     {owner.city}, {owner.province}
                   </p>
-                  <p className="text-muted-foreground">
-                    {owner.postalCode}
-                  </p>
+                  <p className="text-muted-foreground">{owner.postalCode}</p>
                 </div>
               </div>
             </CardContent>
@@ -127,14 +163,19 @@ export default function OwnerProfilePage() {
               <CardTitle className="text-lg">Documents</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <DocumentRow
-                title="Government ID"
-                subtitle="Verified document"
-              />
-              <DocumentRow
-                title="Ownership Deed"
-                subtitle="PDF document"
-              />
+              {owner.documents.idDocument && (
+                <DocumentRow title="Government ID" subtitle="Verified document" docUrl={owner.documents.idDocument} />
+              )}
+              {owner.documents.residentialDoc && (
+                <DocumentRow
+                  title="Residential Document"
+                  subtitle="PDF document"
+                  docUrl={owner.documents.residentialDoc}
+                />
+              )}
+              {!owner.documents.idDocument && !owner.documents.residentialDoc && (
+                <p className="text-sm text-muted-foreground">No documents uploaded</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -146,19 +187,19 @@ export default function OwnerProfilePage() {
             <StatCard
               icon={<Building className="h-6 w-6" />}
               label="Properties"
-              value={owner.totalProperties ?? 0}
+              value={owner.totalProperties}
               className="bg-primary/5 border-primary/20"
             />
             <StatCard
               icon={<Calendar className="h-6 w-6" />}
               label="Bookings"
-              value={owner.totalBookings ?? 0}
+              value={owner.totalBookings}
               className="bg-secondary/5 border-secondary/20"
             />
             <StatCard
               icon={<DollarSign className="h-6 w-6" />}
               label="Revenue"
-              value={`$${(owner.totalRevenue ?? 0).toLocaleString()}`}
+              value={`$${owner.totalRevenue.toLocaleString()}`}
               className="bg-emerald-50 border-emerald-200"
             />
           </div>
@@ -166,64 +207,51 @@ export default function OwnerProfilePage() {
           {/* Linked Properties */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">
-                Linked Properties
-              </CardTitle>
+              <CardTitle className="text-lg">Linked Properties</CardTitle>
+              <a href="/admin/properties">
               <Button size="sm" variant="outline">
-                Add Property
+                See all Properties
               </Button>
+              </a>
             </CardHeader>
 
             <CardContent>
               <div className="space-y-4">
-                {ownerProperties.map((property) => (
-                  <Link
-                    key={property.id}
-                    href={`/admin/properties/${property.id}`}
-                  >
-                    <div className="flex items-center gap-4 p-3 border rounded-xl hover:shadow-md transition-all cursor-pointer bg-card">
-                      <div className="h-20 w-28 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                        <img
-                          src={property.imageUrl}
-                          alt={property.title}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-semibold truncate">
-                            {property.title}
-                          </h4>
-                          <StatusBadge
-                            status={property.status}
+                {owner.properties.length > 0 ? (
+                  owner.properties.map((property) => (
+                    <Link key={property.id} href={`/admin/properties/${property.id}`}>
+                      <div className="flex items-center gap-4 p-3 border rounded-xl hover:shadow-md transition-all cursor-pointer bg-card">
+                        <div className="h-20 w-28 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                          <img
+                            src={property.imageUrl || "/placeholder.svg"}
+                            alt={property.title}
+                            className="h-full w-full object-cover"
                           />
                         </div>
 
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                          <MapPin className="h-3 w-3" />
-                          {property.city}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-semibold truncate">{property.title}</h4>
+                            <StatusBadge status={property.status} />
+                          </div>
 
-                        <div className="flex gap-4 mt-2 text-sm">
-                          <span className="font-medium">
-                            {property.bookings} bookings
-                          </span>
-                          <span className="font-medium text-emerald-600">
-                            ${(property.revenue ?? 0).toLocaleString()}
-                          </span>
+                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                            <MapPin className="h-3 w-3" />
+                            {property.city}
+                          </p>
+
+                          <div className="flex gap-4 mt-2 text-sm">
+                            <span className="font-medium">{property.bookings} bookings</span>
+                            <span className="font-medium text-emerald-600">${property.revenue.toLocaleString()}</span>
+                          </div>
                         </div>
+
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       </div>
-
-                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  </Link>
-                ))}
-
-                {ownerProperties.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No properties linked to this owner yet.
-                  </div>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">No properties linked to this owner yet.</div>
                 )}
               </div>
             </CardContent>
@@ -231,7 +259,7 @@ export default function OwnerProfilePage() {
         </div>
       </div>
     </>
-  );
+  )
 }
 
 /* Reusable components */
@@ -242,34 +270,32 @@ function StatCard({
   value,
   className,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  className?: string;
+  icon: React.ReactNode
+  label: string
+  value: string | number
+  className?: string
 }) {
   return (
     <Card className={className}>
       <CardContent className="p-4 flex items-center gap-4">
-        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-          {icon}
-        </div>
+        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">{icon}</div>
         <div>
-          <p className="text-sm text-muted-foreground font-medium">
-            {label}
-          </p>
+          <p className="text-sm text-muted-foreground font-medium">{label}</p>
           <p className="text-2xl font-bold">{value}</p>
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }
 
 function DocumentRow({
   title,
   subtitle,
+  docUrl,
 }: {
-  title: string;
-  subtitle: string;
+  title: string
+  subtitle: string
+  docUrl: string
 }) {
   return (
     <div className="border rounded-lg p-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
@@ -279,14 +305,14 @@ function DocumentRow({
         </div>
         <div>
           <p className="font-medium text-sm">{title}</p>
-          <p className="text-xs text-muted-foreground">
-            {subtitle}
-          </p>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
       </div>
-      <Button variant="ghost" size="icon">
-        <ExternalLink className="h-4 w-4" />
-      </Button>
+      <a href={docUrl} target="_blank" rel="noopener noreferrer">
+        <Button variant="ghost" size="icon">
+          <ExternalLink className="h-4 w-4" />
+        </Button>
+      </a>
     </div>
-  );
+  )
 }

@@ -24,6 +24,7 @@ import {
   Legend,
 } from "recharts";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
+import OwnerStripeStatus from "../components/OwnerStripeStatus";
 
 const statsCards = [
   {
@@ -127,6 +128,9 @@ export default function RevenuePage() {
 
   return (
     <OwnerLayout>
+
+      
+             
       <div className="space-y-6">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -150,6 +154,9 @@ export default function RevenuePage() {
             Export Transactions
           </button>
         </div>
+
+
+           
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
@@ -189,6 +196,10 @@ export default function RevenuePage() {
           ))}
         </div>
 
+
+ <OwnerStripeStatus />
+
+ 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Monthly Revenue Line Chart */}
@@ -364,6 +375,9 @@ export default function RevenuePage() {
               >
                 <FontAwesomeIcon icon={faChevronRight} className="w-4 h-4" />
               </button>
+
+
+
             </div>
           </div>
         </div>
