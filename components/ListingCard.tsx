@@ -7,6 +7,9 @@ import { MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Listing } from "@/types";
+import { useRouter } from "next/navigation"
+import { authCheck } from "@/services/authCheck";
+
 
 interface ListingCardProps {
   listing: Listing;
@@ -15,9 +18,29 @@ interface ListingCardProps {
 export function ListingCard({ listing }: ListingCardProps) {
   // const [isWishlisted, setIsWishlisted] = useState(false);
 
+  const router = useRouter()
+
+  const useAvailabilityNavigation = async (listingId: any) => {
+
+    if (!listingId) { return; }
+
+    const user = await authCheck();
+
+    console.log("user from /auth/me is: ", user);
+
+    if (!user) {
+      router.push(`/customer/signin`)
+    }
+    if(user){
+    router.push(`/customer/hotel/${listingId}`);
+    }
+  }
+
+
+
   return (
     <Card className="overflow-hidden border border-gray-200 hover:shadow-[0px_8px_24px_rgba(63,44,119,0.15)] transition-all duration-300">
-     
+
       <div className="flex flex-col md:flex-row gap-4 p-4">
         {/* Image */}
         <div className="relative w-full md:w-[280px] h-[200px] md:h-[180px] flex-shrink-0 rounded-lg overflow-hidden">
@@ -62,7 +85,7 @@ export function ListingCard({ listing }: ListingCardProps) {
             <div className="flex items-center gap-2">
               <div className="w-12 h-12 bg-[#59a5b2] rounded-lg flex items-center justify-center flex-shrink-0">
                 <span className="font-bold text-white text-base [font-family:'Inter',Helvetica]">
-                  {listing.rating}.0
+                  {listing.avgRating}.0
                 </span>
               </div>
             </div>
@@ -117,7 +140,7 @@ export function ListingCard({ listing }: ListingCardProps) {
                   1 night, 2 adults, Taxes Extra
                 </p>
               </div>
-              <Button
+              {/* <Button
                 className="w-full sm:w-auto bg-[#febc11] hover:bg-[#fec328]/90 text-[#000000] [font-family:'Poppins',Helvetica] font-semibold px-6"
                 asChild
                 data-testid={`button-availability-${listing.id}`}
@@ -125,12 +148,21 @@ export function ListingCard({ listing }: ListingCardProps) {
                 <Link href={`/customer/hotel/${listing.id}`} prefetch={false}>
                   See Availability
                 </Link>
+              </Button> */}
+
+
+              <Button
+                className="w-full sm:w-auto bg-[#febc11] hover:bg-[#fec328]/90 text-[#000000] [font-family:'Poppins',Helvetica] font-semibold px-6"
+                data-testid={`button-availability-${listing.id}`}
+                onClick={() => useAvailabilityNavigation(listing.id)}
+              >
+                See Availability
               </Button>
             </div>
           </div>
         </div>
       </div>
-     
+
     </Card>
   );
 }

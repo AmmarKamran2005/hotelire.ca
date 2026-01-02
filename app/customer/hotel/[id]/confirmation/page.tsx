@@ -8,6 +8,8 @@ import { Footer } from "@/components/Footer"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, MapPin, Calendar, Users, Mail, MessageSquare, Printer, AlertCircle, Loader, Headset } from "lucide-react"
+import { useRouter } from "next/navigation";
+import { authCheck } from "@/services/authCheck";
 
 interface BookingConfirmationData {
   confirmationId: string
@@ -70,11 +72,29 @@ interface BookingConfirmationData {
 const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ""
 
 export default function BookingConfirmationPage() {
+    const router = useRouter();
   const searchParams = useSearchParams()
   const bookingId = searchParams.get("bookingId")
   const [data, setData] = useState<BookingConfirmationData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+
+    useEffect(() => {
+  
+      const logincheck = async () => {
+        const user = await authCheck();
+  
+        console.log("user from /auth/me is: ", user);
+  
+        if (!user) {
+          router.push(`/customer/signin`)
+        }
+      }
+      logincheck();
+  
+    }, [])
+
 
   useEffect(() => {
     console.log("response ", bookingId)

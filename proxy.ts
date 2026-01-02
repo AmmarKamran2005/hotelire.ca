@@ -13,7 +13,7 @@ export async function proxy(request: NextRequest) {
     }
     return NextResponse.next();
   }
-  
+
   try {
     // ✅ Verify token using jose
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -45,15 +45,57 @@ export async function proxy(request: NextRequest) {
       }
 
       // 2️⃣ For all other /owner/* routes → require roleId = 2
-      if (roleId !== 2 ) {
+      if (roleId !== 2) {
         url.pathname = "/unauthorized";
         return NextResponse.redirect(url);
       }
+
+
+      if (url.pathname.includes("/owner/add-property")) {
+        return NextResponse.next();
+      }
+
+      // 🔥 Call backend API to verify subscription
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/stripes/subscription/check-subscription`,
+          {
+            headers: {
+              // ⬅️ forward token to backend
+              Cookie: `token=${token}`,
+            },
+          }
+        );
+
+        if (url.pathname.includes("/owner/subscription")) {
+          return NextResponse.next();
+        }
+
+
+        const data = await res.json();
+
+        if (!data.subscribed) {
+          url.pathname = "/owner/subscription";
+          return NextResponse.redirect(url);
+        }
+      } catch (error) {
+        console.log("subscription check error", error);
+        url.pathname = "/owner/subscription";
+        return NextResponse.redirect(url);
+      }
+
+
+
+      return NextResponse.next();
+
+
+
     }
 
 
 
     return NextResponse.next();
+
   } catch (err) {
     console.error("JWT verification failed:", err);
     url.pathname = "/customer/signin";

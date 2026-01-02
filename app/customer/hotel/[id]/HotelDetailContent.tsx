@@ -58,6 +58,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { PropertyDetail } from "@/types";
+import { authCheck } from "@/services/authCheck";
 
 const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -86,6 +87,29 @@ interface SharedSpaces {
 
 export default function HotelDetailPage({ id }: { id: string }) {
   const router = useRouter();
+
+
+
+
+
+
+
+    useEffect(() => {
+  
+      const logincheck = async () => {
+        const user = await authCheck();
+  
+        console.log("user from /auth/me is: ", user);
+  
+        if (!user) {
+          router.push(`/customer/signin`)
+        }
+      }
+      logincheck();
+  
+    }, [])
+  
+
 
   // Availabilities state
   const [PropertyAmenities, setPropertyAmenities] = useState<Amenities[]>(
@@ -216,6 +240,8 @@ export default function HotelDetailPage({ id }: { id: string }) {
   };
 
   useEffect(() => {
+
+    console.log("id",id)
     if (!id || id === "") {
       router.push("/not-found");
       return;
@@ -224,12 +250,12 @@ export default function HotelDetailPage({ id }: { id: string }) {
     const fetchProperty = async () => {
       try {
         const res = await axios.get(`${baseUrl}/ownerProperty/getProperties/${id}`, { withCredentials: true });
-        if (!res || !res.data || !res.data.property) {
+        if (!res || !res.data || !res.data.properties) {
           router.push("/not-found");
           return;
         }
 
-        const Details = res.data.property.map((p: any) => mapPropertyToDetail(p));
+        const Details = res.data.properties.map((p: any) => mapPropertyToDetail(p));
         setPropertyDetail(Details[0] ?? null);
 
         // initialize roomQtyMap with zeros for all propertyroomids
