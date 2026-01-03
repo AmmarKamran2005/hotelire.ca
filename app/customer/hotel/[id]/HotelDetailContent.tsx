@@ -21,6 +21,7 @@ import {
   Plus,
   Star,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import * as Icons from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -93,21 +94,26 @@ export default function HotelDetailPage({ id }: { id: string }) {
 
 
 
+useEffect(() => {
+  const logincheck = async () => {
+    try {
+      const user = await authCheck();
 
-    useEffect(() => {
-  
-      const logincheck = async () => {
-        const user = await authCheck();
-  
-        console.log("user from /auth/me is: ", user);
-  
-        if (!user) {
-          router.push(`/customer/signin`)
-        }
+      if (!user || !user.user) {
+        router.push("/customer/signin");
+        return;
       }
-      logincheck();
-  
-    }, [])
+
+      setRoleId(user.user.roleid);
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      router.push("/customer/signin");
+    }
+  };
+
+  logincheck();
+}, []);
+
   
 
 
@@ -143,6 +149,8 @@ export default function HotelDetailPage({ id }: { id: string }) {
   const [propertyDetail, setPropertyDetail] = useState<PropertyDetail | null>(
     null
   );
+  const [roleId, setRoleId] = useState<number | null>(null);
+
 
   // Simple canadian cities list used for suggestion dropdown (unchanged)
   const canadianCities = [
@@ -433,6 +441,16 @@ const calculateTotal = () => {
 
   //handle reserve function updated by gpt
   const handleReserve = () => {
+
+     // ❌ Owner cannot book
+  if (roleId === 2) {
+    toast.error(
+      "You are logged in as a property owner. Please use a customer account to make a booking."
+    );
+    return;
+  }
+ 
+
     if (!checkInDate || !checkOutDate || cart.length === 0) {
       setShowValidation(true);
       return;
