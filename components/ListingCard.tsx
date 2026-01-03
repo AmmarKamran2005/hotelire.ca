@@ -31,8 +31,8 @@ export function ListingCard({ listing }: ListingCardProps) {
     if (!user) {
       router.push(`/customer/signin`)
     }
-    if(user){
-    router.push(`/customer/hotel/${listingId}`);
+    if (user) {
+      router.push(`/customer/hotel/${listingId}`);
     }
   }
 
@@ -83,64 +83,69 @@ export function ListingCard({ listing }: ListingCardProps) {
 
 
             <div className="flex items-center gap-2">
-              <div className="w-12 h-12 bg-[#59a5b2] rounded-lg flex items-center justify-center flex-shrink-0">
+              <Link href={`/customer/hotel/${listing.id}/reviews`}>
+              <div
+                title="View reviews"
+                className="w-12 h-12 bg-[#59a5b2] rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer"
+              >
                 <span className="font-bold text-white text-base [font-family:'Inter',Helvetica]">
                   {listing.avgRating}.0
                 </span>
               </div>
+            </Link>
+          </div>
+        </div>
+
+
+
+        <div className="mt-auto flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">
+          <div className="flex-1">
+            <p className="[font-family:'Inter',Helvetica] font-semibold text-gray-800 text-sm mb-2">
+
+              Rooms Available
+            </p>
+            <p className="[font-family:'Inter',Helvetica] font-normal text-gray-600 text-xs mb-3">
+              {
+
+                <span>{listing.roomTypes.join(" | ")} </span>
+
+              }
+
+            </p>
+
+            <p className="[font-family:'Inter',Helvetica] font-normal text-gray-700 text-sm mb-3 line-clamp-2">
+              <b>Check-In: / Check-Out Times:</b>  {listing.checkIn} / {listing.checkOut}
+            </p>
+
+            {/* Key Offerings */}
+            <div className="flex items-center gap-3 mb-2">
+              <p className="[font-family:'Inter',Helvetica] font-semibold text-gray-800 text-sm">
+                Key Offerings
+              </p>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {listing.amenities.map((amenity, index) => (
+                <span
+                  key={index}
+                  className="[font-family:'Inter',Helvetica] font-medium text-[#59a5b2] text-xs px-2 py-1 bg-[#f5f6fd] rounded"
+                >
+                  {amenity}
+                </span>
+              ))}
             </div>
           </div>
 
-
-
-          <div className="mt-auto flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">
-            <div className="flex-1">
-              <p className="[font-family:'Inter',Helvetica] font-semibold text-gray-800 text-sm mb-2">
-
-                Rooms Available
+          {/* Price and CTA */}
+          <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+            <div className="text-right">
+              <p className="[font-family:'Poppins',Helvetica] font-bold text-[#59a5b2] text-2xl">
+                {listing.price} CAD
               </p>
-              <p className="[font-family:'Inter',Helvetica] font-normal text-gray-600 text-xs mb-3">
-                {
-
-                  <span>{listing.roomTypes.join(" | ")} </span>
-
-                }
-
+              <p className="[font-family:'Inter',Helvetica] font-normal text-gray-600 text-xs">
+                1 night, 2 adults, Taxes Extra
               </p>
-
-              <p className="[font-family:'Inter',Helvetica] font-normal text-gray-700 text-sm mb-3 line-clamp-2">
-                <b>Check-In: / Check-Out Times:</b>  {listing.checkIn} / {listing.checkOut}
-              </p>
-
-              {/* Key Offerings */}
-              <div className="flex items-center gap-3 mb-2">
-                <p className="[font-family:'Inter',Helvetica] font-semibold text-gray-800 text-sm">
-                  Key Offerings
-                </p>
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                {listing.amenities.map((amenity, index) => (
-                  <span
-                    key={index}
-                    className="[font-family:'Inter',Helvetica] font-medium text-[#59a5b2] text-xs px-2 py-1 bg-[#f5f6fd] rounded"
-                  >
-                    {amenity}
-                  </span>
-                ))}
-              </div>
             </div>
-
-            {/* Price and CTA */}
-            <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
-              <div className="text-right">
-                <p className="[font-family:'Poppins',Helvetica] font-bold text-[#59a5b2] text-2xl">
-                  {listing.price} CAD
-                </p>
-                <p className="[font-family:'Inter',Helvetica] font-normal text-gray-600 text-xs">
-                  1 night, 2 adults, Taxes Extra
-                </p>
-              </div>
-              {/* <Button
+            {/* <Button
                 className="w-full sm:w-auto bg-[#febc11] hover:bg-[#fec328]/90 text-[#000000] [font-family:'Poppins',Helvetica] font-semibold px-6"
                 asChild
                 data-testid={`button-availability-${listing.id}`}
@@ -151,18 +156,18 @@ export function ListingCard({ listing }: ListingCardProps) {
               </Button> */}
 
 
-              <Button
-                className="w-full sm:w-auto bg-[#febc11] hover:bg-[#fec328]/90 text-[#000000] [font-family:'Poppins',Helvetica] font-semibold px-6"
-                data-testid={`button-availability-${listing.id}`}
-                onClick={() => useAvailabilityNavigation(listing.id)}
-              >
-                See Availability
-              </Button>
-            </div>
+            <Button
+              className="w-full sm:w-auto bg-[#febc11] hover:bg-[#fec328]/90 text-[#000000] [font-family:'Poppins',Helvetica] font-semibold px-6"
+              data-testid={`button-availability-${listing.id}`}
+              onClick={() => useAvailabilityNavigation(listing.id)}
+            >
+              See Availability
+            </Button>
           </div>
         </div>
       </div>
+    </div>
 
-    </Card>
+    </Card >
   );
 }

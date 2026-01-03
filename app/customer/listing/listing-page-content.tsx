@@ -951,15 +951,15 @@ export function ListingPageContent() {
     }
 
     // 🏙️ CITY FILTER (✅ NEW — STEP 2)
-<<<<<<< HEAD
-    if (selectedCity) {
-      const cityId = citySlugToIdMap.get(selectedCity)
 
-      if (cityId) {
-        result = result.filter((p) => p.canadian_city_id === cityId)
-      }
-    }
-=======
+    // if (selectedCity) {
+    //   const cityId = citySlugToIdMap.get(selectedCity)
+
+    //   if (cityId) {
+    //     result = result.filter((p) => p.canadian_city_id === cityId)
+    //   }
+    // }
+
 // 🏙️ CITY FILTER (ID PRIMARY + NAME FALLBACK)
 // 🏙️ CITY FILTER (ID BASED — FIXED)
 if (selectedCity) {
@@ -973,9 +973,7 @@ if (selectedCity) {
 }
 
 
->>>>>>> 2932ab0018ae946dcf99dc9580d5d745c166f1d8
-
-    // 💰 Price Range
+ // 💰 Price Range
     result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1])
 
     return result

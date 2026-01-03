@@ -105,7 +105,7 @@ export function PasswordModal({
               htmlFor="password"
               className="[font-family:'Inter',Helvetica] text-gray-700 font-medium"
             >
-              Password
+              Password/Code
             </Label>
 
             {/* 👁️ Password Field with Show/Hide */}
