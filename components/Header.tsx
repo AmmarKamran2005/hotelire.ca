@@ -212,6 +212,7 @@ import {
   faSignOutAlt,
   faUser,
     faCalendarCheck,
+    faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 
 
@@ -338,7 +339,7 @@ const handleProfileRedirect = () => {
               />
 
               <span className="text-[#ffffff] text-[13px] [font-family:'Poppins',Helvetica] font-bold hidden sm:block">
-                {userName}
+                {userName} <FontAwesomeIcon icon={faChevronDown} className="w-4 h-4 ml-1" />
               </span>
             </button>
           </DropdownMenuTrigger>

@@ -1130,6 +1130,9 @@ export default function BookingSummaryPage() {
     setIsSubmitting(true);
 
     try {
+
+      console.log("Date In DB:", formatDate(bookingData.dates.checkOut))
+
       console.log("[v0] Creating payment intent for property:", bookingData.property.id);
 
       // Step 1: Create PaymentIntent with property ID to route to owner's Stripe account
@@ -1193,7 +1196,6 @@ export default function BookingSummaryPage() {
 
 
 
-
       const bookingRes = await axios.post(
         `${baseUrl}/booking/create`,
         {
@@ -1201,6 +1203,8 @@ export default function BookingSummaryPage() {
           propertyId: bookingData.property.id,
           checkInDate: bookingData.dates.checkIn,
           checkOutDate: bookingData.dates.checkOut,
+
+
           rooms: bookingData.rooms.map((room) => ({
             roomId: room.id,
             quantity: room.quantity,
@@ -1237,9 +1241,9 @@ export default function BookingSummaryPage() {
       localStorage.removeItem("booking_summary");
 
       // Redirect to confirmation page
-      router.push(
-        `/customer/hotel/${bookingData.property.id}/confirmation?bookingId=${bookingId}`
-      );
+      // router.push(
+      //   `/customer/hotel/${bookingData.property.id}/confirmation?bookingId=${bookingId}`
+      // );
     } catch (error: any) {
       console.error("[v0] Booking creation error:", error);
       const errorMessage =

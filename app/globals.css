@@ -743,3 +743,42 @@
     page-break-inside: avoid;
   }
 }
+
+/* =========================
+   MASTER PRINT ISOLATION
+========================= */
+@media print {
+  /* hide EVERYTHING by default */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* show ONLY invoice */
+  .invoice-print,
+  .invoice-print * {
+    visibility: visible !important;
+  }
+
+  /* force invoice layout */
+  .invoice-print {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    background: white;
+  }
+
+  /* hard-hide layout elements */
+  header,
+  nav,
+  footer,
+  button {
+    display: none !important;
+  }
+
+  /* A4 margins */
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+}
