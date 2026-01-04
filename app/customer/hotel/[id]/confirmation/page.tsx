@@ -574,6 +574,15 @@ export default function BookingConfirmationPage() {
     logincheck()
   }, [])
 
+   const formatDate = (isoString:string) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString("en-CA", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   useEffect(() => {
     console.log("response ", bookingId)
     if (!bookingId) return
@@ -717,10 +726,10 @@ export default function BookingConfirmationPage() {
                     CHECK-IN
                   </p>
                   <p className="text-lg font-semibold text-gray-900 mb-1" style={{ fontFamily: "Poppins, sans-serif" }}>
-                    {formatDate1(data.dates.checkIn)}
+                    {formatDate(data.dates.checkIn)}
                   </p>
                   <p className="text-sm text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
-                    From {data.property.checkInTime}
+                    From {formatDate(data.property.checkInTime)}
                   </p>
                 </div>
 

@@ -71,6 +71,7 @@ interface Property {
   featured: boolean;
   canadian_city_name: string;
   canadian_province_name: string;
+  avgRating?: number;
 }
 
 interface Amenity {
@@ -118,7 +119,7 @@ export default function Properties() {
                 availablestatus: Boolean(p.availablestatus),
                 amenities,       // now an array of { name, icon }
                 featured: true,
-                rating: 0,
+                avgRating: p.avgRating || 0,
                 reviews: 0,
                 price: 0,
                 canadian_city_name: p.canadian_cities.canadian_city_name,
@@ -393,31 +394,18 @@ function PropertyCard({
 
         {/* Status Badge */}
         <div className="absolute top-3 right-3">
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm border ${property.availablestatus
-            ? 'bg-green-500/90 text-white border-green-400/50'
-            : 'bg-zinc-500/90 text-white border-zinc-400/50'
-            }`}>
-            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${property.availablestatus ? 'bg-green-200 animate-pulse' : 'bg-zinc-300'
-              }`} />
-            {property.availablestatus ? 'Active' : 'Inactive'}
+          <span className={"inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm border bg-green-500/90 text-white border-green-400/50"}>
+            <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-green-200 animate-pulse" />
+           
+              Active
           </span>
         </div>
 
-        {/* Featured Badge */}
-        {/* {property.featured && (
-          <div className="absolute top-3 left-3">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#FEBC11] text-black shadow-sm">
-              <Star className="w-3 h-3 fill-black text-black mr-1" />
-              Featured
-            </span>
-          </div>
-        )} */}
-
+   
         {/* Rating Bubble */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-white/95 dark:bg-zinc-900/95 backdrop-blur px-2.5 py-1.5 rounded-full shadow-lg text-xs font-semibold text-foreground">
           <Star className="w-3.5 h-3.5 fill-[#FEBC11] text-[#FEBC11]" />
-          <span>{property.rating}</span>
-          <span className="text-muted-foreground font-normal">({property.reviews})</span>
+          <span>{property.avgRating}</span>
         </div>
       </div>
 
@@ -480,28 +468,15 @@ function PropertyCard({
         </div>
 
         {/* Footer */}
-        <div className="mt-5 pt-4 border-t border-border/50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">
-              Status
-            </span>
+        <div className="mt-5 pt-4 border-t  flex items-center justify-between">
+          {/* <div className="flex items-center gap-2">
+          
 
-            <button
-              onClick={() => onToggleStatus(property.propertyid)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${property.availablestatus ? "bg-green-500" : "bg-zinc-400"
-                }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.availablestatus ? "translate-x-6" : "translate-x-1"
-                  }`}
-              />
-            </button>
-
-          </div>
+          </div> */}
 
 
-          <div className="flex items-center gap-1 opacity-100 hover:opacity-100 transition-opacity duration-200">
-            <DropdownMenu>
+          {/* <div className="flex items-center gap-1 opacity-100 hover:opacity-100 transition-opacity duration-200"> */}
+            {/* <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-accent rounded-lg">
                   <MoreVertical className="w-4 h-4 text-muted-foreground" />
@@ -528,16 +503,16 @@ function PropertyCard({
                   <Trash2 className="w-4 h-4 mr-2" /> Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu> */}
 
 
             <Link href={`/admin/properties/${property.propertyid}`}>
-              <Button size="sm" className="h-8 bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 rounded-lg text-xs font-medium px-3 shadow-none">
-                Manage <ArrowUpRight className="w-3 h-3 ml-1" />
+              <Button size="sm" className="h-8 bg-zinc-900   text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 rounded-lg text-xs font-medium px-3 shadow-none">
+                See Info <ArrowUpRight className="w-3 h-3 ml-1" />
               </Button>
             </Link>
 
-          </div>
+          {/* </div> */}
 
 
         </div>

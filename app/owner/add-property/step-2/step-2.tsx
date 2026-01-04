@@ -95,7 +95,7 @@ export default function Step2Page() {
   const getPropertyInformation = async (propertyid: any) => {
 
     try {
-      const response = await axios.get(`${baseUrl}/ownerProperty/getProperties/${propertyid}`, {
+      const response = await axios.get(`${baseUrl}/ownerProperty/getPropertiesforowner/${propertyid}`, {
         headers: { "Content-Type": "application/json" },
         withCredentials: true,
       });

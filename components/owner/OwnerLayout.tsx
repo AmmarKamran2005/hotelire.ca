@@ -123,7 +123,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
             </svg>
 
             <span>
-             Customers are unable to see your property, you haven't connected your Stripe account yet. Connect to receive payouts.
+            Alert! Customers are unable to see your property. Connect to receive payouts. Some pages will not be accessible stil.
             </span>
 
             <button

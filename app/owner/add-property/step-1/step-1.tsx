@@ -152,11 +152,12 @@ export default function Step1Page() {
 
       const fetchPropertyDatatoEdit = async () => {
         try {
-          const response = await axios.get(`${baseUrl}/ownerProperty/getProperties/${id}`, {
+          const response = await axios.get(`${baseUrl}/ownerProperty/getPropertiesforowner/${id}`, {
             headers: { "Content-Type": "application/json" },
             withCredentials: true,
           });
-          const propdata = response.data.property[0];
+          console.log("this response",response);
+          const propdata = response.data.property;
 
 
 
