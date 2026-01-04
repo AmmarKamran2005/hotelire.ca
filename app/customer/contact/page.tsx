@@ -103,7 +103,7 @@ const [formData, setFormData] = useState({
         <div className="w-full max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
             {/* Left side - Building image (hidden on mobile, shown on desktop) */}
-            <div className="hidden lg:block relative h-full rounded-3xl overflow-hidden shadow-2xl">
+            <div className="hidden lg:block relative h-full rounded-3xl overflow-hidden shadow-sm">
               <Image
                 src="/contactpic4.jpg"
                 alt="Modern building architecture"
@@ -113,7 +113,7 @@ const [formData, setFormData] = useState({
             </div>
 
             {/* Right side - Contact form in white card */}
-            <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12">
+            <div className="bg-white rounded-3xl shadow-sm p-8 md:p-12">
               {isSuccess ? (
                 <div className="text-center py-8">
                   <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-100 mb-6">
@@ -213,7 +213,7 @@ const [formData, setFormData] = useState({
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-[#59A5B2] to-[#4a8a95] hover:from-[#4a8a95] hover:to-[#3f7680] text-white font-semibold py-4 px-6 rounded-full flex justify-center items-center gap-2 transition-all duration-200 disabled:opacity-70 shadow-lg hover:shadow-xl text-base md:text-lg"
+                      className="w-full bg-gradient-to-r from-[#59A5B2] to-[#4a8a95] hover:from-[#4a8a95] hover:to-[#3f7680] text-white font-semibold py-4 px-6 rounded-full flex justify-center items-center gap-2 transition-all duration-200 disabled:opacity-70 shadow-sm hover:shadow-xl text-base md:text-lg"
                           >
                       {isSubmitting ? (
                         <>

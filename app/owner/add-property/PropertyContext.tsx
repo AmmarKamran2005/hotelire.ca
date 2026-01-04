@@ -245,6 +245,7 @@ const initialDetails: PropertyDetails = {
     photo4: "",
     photo5: "",
   },
+  avgRating: 0,
 }
 
 const initialAmenities: PropertyAmenities = {
