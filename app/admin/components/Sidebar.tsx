@@ -12,6 +12,12 @@ import {
   Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+
+
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -23,6 +29,21 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+const router = useRouter();
+
+
+ const  handleLogout = async () => {
+    try {
+      const res = await axios.post(
+        `${baseUrl}/auth/logout`,
+        {},
+        { withCredentials: true }
+      );
+      router.push("/");
+    } catch (ex) {
+      alert("Something went wrong! Unable to logout");
+    }
+  };
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-card shadow-sm hidden lg:block">
@@ -33,7 +54,7 @@ export function Sidebar() {
             href="/admin/dashboard"
             className="flex items-center gap-2 font-display font-bold text-xl text-primary"
           >
-            <Building2 className="h-6 w-6 text-secondary" />
+            <img src="/Logo_H.png" alt="Hotelire Logo" className="h-8 w-auto" />
             <span>AdminPanel</span>
           </Link>
         </div>
@@ -42,8 +63,7 @@ export function Sidebar() {
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
           {NAV_ITEMS.map((item) => {
             const isActive =
-              pathname === item.href ||
-              pathname.startsWith(`${item.href}/`);
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <Link key={item.href} href={item.href}>
@@ -65,7 +85,7 @@ export function Sidebar() {
 
         {/* Footer */}
         <div className="border-t p-4">
-          <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
+          <button onClick={handleLogout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
             <LogOut className="h-4 w-4" />
             Sign Out
           </button>

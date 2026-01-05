@@ -11,6 +11,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { authCheck } from "@/services/authCheck";
 import axios from "axios";
+import { useRouter } from "next/navigation";
+
 
 interface AdminNavbarProps {
   onMenuClick: () => void;
@@ -28,7 +30,7 @@ export function AdminNavbar({ onMenuClick, isDarkMode, onToggleDarkMode }: Admin
 
 
    const [userName, setuserName] = useState();
-
+const router = useRouter();
 
   const getUser = async () => {
 
@@ -41,12 +43,25 @@ export function AdminNavbar({ onMenuClick, isDarkMode, onToggleDarkMode }: Admin
   }
 
 
+const handleLogout = async () => {
+  try {
+    await axios.post(
+      `${baseUrl}/auth/logout`,
+      {},
+      { withCredentials: true }
+    );
+
+    router.push("/"); // ya /customer/signin agar chaho
+  } catch (error) {
+    alert("Something went wrong! Unable to logout");
+  }
+};
+
 
 
   useEffect(() => {
     getUser();
   }, [])
-
 
 
 
@@ -140,6 +155,7 @@ export function AdminNavbar({ onMenuClick, isDarkMode, onToggleDarkMode }: Admin
                 Customer Pannel
               </a>
               <button
+              onClick={handleLogout}
                 className={`flex items-center gap-3 px-4 py-3 text-sm w-full text-left transition-colors ${isDarkMode
                     ? "text-red-400 hover:bg-gray-700"
                     : "text-red-600 hover:bg-gray-50"

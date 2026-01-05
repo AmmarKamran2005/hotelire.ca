@@ -10,7 +10,10 @@ import {
   faUsers,
   faDollarSign,
   faBed,
+  faDownload,
 } from "@fortawesome/free-solid-svg-icons"
+import { useState } from "react"
+import { generateBookingPDF } from "@/lib/pdf-generator"
 
 interface BookingDetails {
   guestName: string
@@ -36,6 +39,7 @@ interface BookingDetailsModalProps {
 }
 
 export function BookingDetailsModal({ isOpen, booking, onClose }: BookingDetailsModalProps) {
+   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   if (!isOpen || !booking) return null
 
   const getStatusColor = (status: string) => {
@@ -50,6 +54,17 @@ export function BookingDetailsModal({ isOpen, booking, onClose }: BookingDetails
         return "text-blue-600 bg-blue-50 dark:bg-blue-900/20"
       default:
         return "text-gray-600 bg-gray-50 dark:bg-gray-900/20"
+    }
+  }
+
+    const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true)
+    try {
+      await generateBookingPDF(booking)
+    } catch (error) {
+      console.error("Failed to generate PDF:", error)
+    } finally {
+      setIsGeneratingPDF(false)
     }
   }
 
@@ -179,8 +194,16 @@ export function BookingDetailsModal({ isOpen, booking, onClose }: BookingDetails
           </div>
         </div>
 
-        {/* Footer */}
+                {/* Footer */}
         <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 sticky bottom-0">
+          <button
+            onClick={handleDownloadPDF}
+            disabled={isGeneratingPDF}
+            className="px-4 py-2 bg-[#59A5B2] hover:bg-[#488a97] disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            <FontAwesomeIcon icon={faDownload} className="w-4 h-4" />
+            {isGeneratingPDF ? "Generating..." : "Download PDF"}
+          </button>
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg font-medium transition-colors"

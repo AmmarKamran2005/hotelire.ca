@@ -2,15 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Eye, Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { GuestHouse} from "@/types";
+import { useRouter } from "next/navigation";   // ✅ Added
+
 
 interface GuestHouseCardProps {
   property: GuestHouse;
 }
 
 export function GuestHouseCard({ property }: GuestHouseCardProps) {
+  const router = useRouter();   // ✅ Added
   return (
     <Link href={`/customer/hotel/${property.id}`} prefetch={false}>
       <Card className="overflow-hidden border border-gray-100 hover:shadow-[0px_8px_24px_rgba(63,44,119,0.1)] transition-all duration-300">
@@ -23,16 +26,18 @@ export function GuestHouseCard({ property }: GuestHouseCardProps) {
               className="object-cover"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />
+            {/* 👁 View Details Button */}
             <button
               className="absolute top-3 left-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center transition-all duration-200 hover:bg-white hover:scale-110 z-10"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                router.push(`/customer/hotel/${property.id}`); // Correct detail page URL
               }}
-              aria-label="Add to wishlist"
-              data-testid={`button-wishlist-${property.id}`}
+              aria-label="View details"
+              data-testid={`button-view-${property.id}`}
             >
-              <Heart className="w-4 h-4 text-[#59A5B2] transition-colors duration-200 hover:fill-[#59A5B2]" />
+              <Eye className="w-4 h-4 text-[#59A5B2]" />
             </button>
           </div>
           <div className="mt-4 flex-1 flex flex-col">
