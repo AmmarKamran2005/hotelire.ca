@@ -128,7 +128,7 @@ export default function DashboardPage() {
                       }`}
                   >
                     <TrendingUp className="h-3 w-3" />
-                    {Number(stat.trend) >= 0 ? "+" : ""}
+                    {Number(stat.trend) >= 0 }
                     {stat.trend}% from last month
                   </p>
                 </div>
@@ -247,4 +247,3 @@ function StatBar({
     </div>
   )
 }
-

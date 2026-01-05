@@ -1340,14 +1340,7 @@ export default function Step3Page() {
             </button>
 
             <div className="flex items-center gap-3">
-              <button
-                onClick={handleSaveExit}
-                className="px-6 h-12 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors"
-                style={{ fontFamily: "Inter, sans-serif" }}
-                data-testid="button-save-exit"
-              >
-                Save & Exit
-              </button>
+  
 
               <button
                 onClick={() => setShowPreview(true)}

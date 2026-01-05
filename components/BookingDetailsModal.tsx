@@ -27,6 +27,8 @@ interface BookingDetailsModalProps {
   booking: Booking | null;
 }
 
+
+
 export function BookingDetailsModal({ isOpen, onClose, booking }: BookingDetailsModalProps) {
   if (!booking) return null;
 

@@ -831,7 +831,7 @@ export default function PropertyDetailPage() {
     
         <div className="flex flex-col items-center justify-center min-h-screen">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Property Not Found</h2>
-          <Link href="/owner/properties" className="text-[#59A5B2] hover:underline">
+          <Link href="/admin/properties" className="text-[#59A5B2] hover:underline">
             Back to Properties
           </Link>
         </div>
@@ -852,7 +852,7 @@ export default function PropertyDetailPage() {
       <div className="space-y-6">
         {/* Back Button */}
         <Link
-          href="/owner/properties"
+          href="/admin/properties"
           className="inline-flex items-center gap-2 text-[#59A5B2] hover:text-[#4a9199] transition-colors"
         >
           <FontAwesomeIcon icon={faArrowLeft} className="w-4 h-4" />

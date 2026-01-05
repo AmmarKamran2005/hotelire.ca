@@ -1508,14 +1508,7 @@ export default function Step1Page() {
 
         {/* Bottom Navigation */}
         <div className="mt-12 pt-8 border-t border-gray-200 flex items-center justify-between">
-          <button
-            onClick={handleSaveExit}
-            className="px-6 h-12 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors"
-            style={{ fontFamily: "Inter, sans-serif" }}
-            data-testid="button-save-exit"
-          >
-            Save & Exit
-          </button>
+
           <button
             onClick={handleNext}
             disabled={!canProceed() || isLoading
