@@ -450,14 +450,14 @@ export default function Step3Page() {
 
       if (!room.count || room.count < 1 || !Number.isInteger(room.count)) {
         newErrors[`room-${room.id}-count`] = "Room count must be a positive integer"
-      } else if (room.count > 999) {
-        newErrors[`room-${room.id}-count`] = "Room count cannot exceed 999"
+      } else if (room.count > 15) {
+        newErrors[`room-${room.id}-count`] = "Room count cannot exceed 15"
       }
 
       if (!trimmedPrice || Number.parseFloat(trimmedPrice) <= 0) {
         newErrors[`room-${room.id}-price`] = "Valid price required"
-      } else if (Number.parseFloat(trimmedPrice) > 99999) {
-        newErrors[`room-${room.id}-price`] = "Price cannot exceed $99,999 CAD"
+      } else if (Number.parseFloat(trimmedPrice) > 5000) {
+        newErrors[`room-${room.id}-price`] = "Price cannot exceed $5,000 CAD"
       }
 
     })
@@ -938,7 +938,7 @@ export default function Step3Page() {
                                 <input
                                   type="number"
                                   min="1"
-                                  max="999"
+                                  max="15"
                                   value={room.count}
                                   onChange={(e) => {
                                     const value = e.target.value
@@ -946,8 +946,8 @@ export default function Step3Page() {
                                     updateRoom(room.id, "count", numValue || 0)
                                     if (!value || isNaN(numValue) || numValue < 1) {
                                       setErrors({ ...errors, [`room-${room.id}-count`]: "Room count must be at least 1" })
-                                    } else if (value.length > 3 || numValue > 999) {
-                                      setErrors({ ...errors, [`room-${room.id}-count`]: "Room count cannot exceed 999" })
+                                    } else if (value.length > 3 || numValue > 15) {
+                                      setErrors({ ...errors, [`room-${room.id}-count`]: "Room count cannot exceed 15" })
                                     } else {
                                       setErrors({ ...errors, [`room-${room.id}-count`]: "" })
                                     }
@@ -972,7 +972,7 @@ export default function Step3Page() {
                                 <input
                                   type="number"
                                   min="0"
-                                  max="99999"
+                                  max="5000"
                                   step="0.01"
                                   value={room.price}
                                   onChange={(e) => {
@@ -982,10 +982,10 @@ export default function Step3Page() {
                                     const digitsOnly = value.split(".")[0]
                                     if (!value || isNaN(numValue) || numValue <= 0) {
                                       setErrors({ ...errors, [`room-${room.id}-price`]: "Valid price required" })
-                                    } else if (digitsOnly.length > 5) {
-                                      setErrors({ ...errors, [`room-${room.id}-price`]: "Price cannot exceed 5 digits" })
-                                    } else if (numValue > 99999) {
-                                      setErrors({ ...errors, [`room-${room.id}-price`]: "Price cannot exceed $99,999" })
+                                    } else if (digitsOnly.length > 4) {
+                                      setErrors({ ...errors, [`room-${room.id}-price`]: "Price cannot exceed 4 digits" })
+                                    } else if (numValue > 5000) {
+                                      setErrors({ ...errors, [`room-${room.id}-price`]: "Price cannot exceed $5,000" })
                                     } else {
                                       setErrors({ ...errors, [`room-${room.id}-price`]: "" })
                                     }

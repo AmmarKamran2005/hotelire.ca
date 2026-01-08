@@ -18,23 +18,23 @@ interface ListingCardProps {
 export function ListingCard({ listing }: ListingCardProps) {
   // const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const router = useRouter()
+  // const router = useRouter()
 
-  const useAvailabilityNavigation = async (listingId: any) => {
+  // const useAvailabilityNavigation = async (listingId: any) => {
 
-    if (!listingId) { return; }
+  //   if (!listingId) { return; }
 
-    const user = await authCheck();
+  //   const user = await authCheck();
 
-    console.log("user from /auth/me is: ", user);
+  //   console.log("user from /auth/me is: ", user);
 
-    if (!user) {
-      router.push(`/customer/signin`)
-    }
-    if (user) {
-      router.push(`/customer/hotel/${listingId}`);
-    }
-  }
+  //   if (!user) {
+  //     router.push(`/customer/signin`)
+  //   }
+  //   if (user) {
+  //     router.push(`/customer/hotel/${listingId}`);
+  //   }
+  // }
 
 
 
@@ -145,7 +145,7 @@ export function ListingCard({ listing }: ListingCardProps) {
                 1 night, 2 adults, Taxes Extra
               </p>
             </div>
-            {/* <Button
+            <Button
                 className="w-full sm:w-auto bg-[#febc11] hover:bg-[#fec328]/90 text-[#000000] [font-family:'Poppins',Helvetica] font-semibold px-6"
                 asChild
                 data-testid={`button-availability-${listing.id}`}
@@ -153,16 +153,16 @@ export function ListingCard({ listing }: ListingCardProps) {
                 <Link href={`/customer/hotel/${listing.id}`} prefetch={false}>
                   See Availability
                 </Link>
-              </Button> */}
+              </Button>
 
 
-            <Button
+            {/* <Button
               className="w-full sm:w-auto bg-[#febc11] hover:bg-[#fec328]/90 text-[#000000] [font-family:'Poppins',Helvetica] font-semibold px-6"
               data-testid={`button-availability-${listing.id}`}
               onClick={() => useAvailabilityNavigation(listing.id)}
             >
               See Availability
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
