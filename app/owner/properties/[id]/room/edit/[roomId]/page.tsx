@@ -95,10 +95,10 @@ export default function EditRoomPage() {
   const isFormValid = () => {
     if (!room.roomname?.trim()) return false
     if (!room.roomtypeid) return false
-    if (!room.roomcount || room.roomcount < 1 || room.roomcount > 999) return false
+    if (!room.roomcount || room.roomcount < 1 || room.roomcount > 15) return false
 
     const priceNum = Number(room.price)
-    if (!room.price || isNaN(priceNum) || priceNum <= 0 || priceNum > 99999) return false
+    if (!room.price || isNaN(priceNum) || priceNum <= 0 || priceNum > 5000) return false
 
     // Check if we have images (either existing or newly uploaded)
     if (!room.pic1Preview || !room.pic2Preview) return false
@@ -342,8 +342,8 @@ export default function EditRoomPage() {
 
                   if (!num || num < 1) {
                     setLocalErrors((prev) => ({ ...prev, roomcount: "Room count must be at least 1" }))
-                  } else if (num > 999) {
-                    setLocalErrors((prev) => ({ ...prev, roomcount: "Room count cannot exceed 999" }))
+                  } else if (num > 15) {
+                    setLocalErrors((prev) => ({ ...prev, roomcount: "Room count cannot exceed 15" }))
                   } else {
                     setLocalErrors((prev) => ({ ...prev, roomcount: "" }))
                   }
@@ -375,8 +375,8 @@ export default function EditRoomPage() {
 
                     if (!value || isNaN(num) || num <= 0) {
                       setLocalErrors((prev) => ({ ...prev, price: "Valid price required" }))
-                    } else if (num > 99999) {
-                      setLocalErrors((prev) => ({ ...prev, price: "Price cannot exceed $99,999" }))
+                    } else if (num > 5000) {
+                      setLocalErrors((prev) => ({ ...prev, price: "Price cannot exceed $5,000" }))
                     } else {
                       setLocalErrors((prev) => ({ ...prev, price: "" }))
                     }

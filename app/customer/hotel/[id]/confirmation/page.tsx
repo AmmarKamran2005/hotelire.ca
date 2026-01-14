@@ -610,6 +610,10 @@ Thank you.`
     });
   };
 
+
+
+  const [FinailBookingId, setFinailBookingId] = useState("")
+
   useEffect(() => {
     console.log("response ", bookingId);
     if (!bookingId) return;
@@ -627,7 +631,12 @@ Thank you.`
         const result = await response.json();
         if (result.success) {
           console.log("result.data", result.data);
-          setData(result.data);
+          setData({
+            ...result.data,
+            confirmationId: `${result.data.confirmationId}-${formatDateforId(result.data.booking.createdAt)}`
+          });
+          setFinailBookingId(`${result.data.confirmationId}-${formatDateforId(result.data.booking.createdAt)}`);
+          
         } else {
           setError("Could not load booking confirmation");
         }
@@ -714,7 +723,7 @@ Thank you.`
           >
             Confirmation ID:{" "}
             <span className="font-semibold text-[#59A5B2]">
-              {`${data.confirmationId}-${formatDateforId(data.booking.createdAt)}`}
+              {FinailBookingId} 
             </span>
           </p>
           <p

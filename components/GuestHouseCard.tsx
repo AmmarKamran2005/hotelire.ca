@@ -57,19 +57,7 @@ export function GuestHouseCard({ property }: GuestHouseCardProps) {
                   {property.rating}
                 </span>
               </div>
-              <div className="flex flex-col gap-1">
-                <div className="relative w-[96.5px] h-[15.55px]">
-                  <Image
-                    src={property.stars}
-                    alt={`${property.rating} stars`}
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-                <span className="[font-family:'Inter',Helvetica] font-medium text-[#59A5B2] text-xs md:text-sm">
-                  {property.reviews}
-                </span>
-              </div>
+              
             </div>
           </div>
         </CardContent>
