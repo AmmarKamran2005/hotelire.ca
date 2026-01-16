@@ -155,7 +155,8 @@ export default function CustomerProfilePage() {
     fetchCanadianProvinces();
   }, []);
 
-  useEffect(() => {
+  useEffect(() => {  
+    
     if (profileData.canadian_provinceid) {
       fetch(
         `${baseUrl}/auth/getCanadianCities/${profileData.canadian_provinceid}`
